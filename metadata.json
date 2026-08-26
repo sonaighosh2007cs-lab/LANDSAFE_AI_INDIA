@@ -1,0 +1,6 @@
+{
+  "name": "LandSafe AI",
+  "description": "National geotechnical disaster & landslide risk intelligence platform for India featuring real-time telemetry, hazard prediction, early warning broadcasts, and interactive GIS mapping.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
