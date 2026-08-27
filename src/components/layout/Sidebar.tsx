@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   LayoutDashboard,
-  Route,
   Radio,
   CloudRain,
   Bot,
@@ -35,7 +34,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
     badge?: { text: string; color: string };
   }[] = [
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
-    { id: 'distance', label: 'Distance & Safe Corridor', icon: Route },
     {
       id: 'disaster-news',
       label: 'Disaster News',

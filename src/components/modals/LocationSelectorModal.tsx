@@ -3,25 +3,29 @@ import {
   X,
   Search,
   MapPin,
-  Check,
-  Compass,
+  Navigation,
+  Loader2,
   AlertTriangle,
-  Mountain,
-  Layers,
-  ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
   INDIAN_STATES,
   searchAllIndianLocations,
   resolveLocation,
-  DEFAULT_USER_LOCATION,
 } from '../../data/locations';
-import { UserLocation } from '../../types';
 
 export const LocationSelectorModal: React.FC = () => {
-  const { isLocationModalOpen, setIsLocationModalOpen, userProfile, changeUserLocation } = useApp();
+  const {
+    isLocationModalOpen,
+    setIsLocationModalOpen,
+    userProfile,
+    changeUserLocation,
+    detectAndApplyGpsLocation,
+    isDetectingGps,
+    gpsStatusText,
+    gpsError,
+    dismissGpsError,
+  } = useApp();
 
   const [tab, setTab] = useState<'quick' | 'cascade' | 'search'>('quick');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +68,13 @@ export const LocationSelectorModal: React.FC = () => {
     await changeUserLocation(loc);
   };
 
+  const handleAutoDetectGps = async () => {
+    const loc = await detectAndApplyGpsLocation();
+    if (loc) {
+      setIsLocationModalOpen(false);
+    }
+  };
+
   const searchResults = searchAllIndianLocations(searchQuery);
 
   return (
@@ -88,6 +99,61 @@ export const LocationSelectorModal: React.FC = () => {
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* GPS Quick Detect Bar */}
+        <div className="px-6 pt-4 pb-2 bg-[#091524] border-b border-[#142942]">
+          <button
+            onClick={handleAutoDetectGps}
+            disabled={isDetectingGps}
+            className="w-full p-3 rounded-xl bg-gradient-to-r from-orange-950/60 to-amber-950/60 hover:from-orange-900/70 hover:to-amber-900/70 border border-orange-500/40 hover:border-orange-400 text-white flex items-center justify-between transition-all cursor-pointer shadow-sm group disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform">
+                {isDetectingGps ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Navigation className="w-5 h-5" />
+                )}
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>{isDetectingGps ? gpsStatusText : 'Auto-Detect My Current GPS Location'}</span>
+                  {!isDetectingGps && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-orange-500/30 text-orange-300 font-normal">
+                      Browser Geolocation
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] text-slate-300">
+                  {isDetectingGps
+                    ? 'Retrieving device coordinates & reverse geocoding locality...'
+                    : 'Get real-time device coordinates and reverse geocode exact area/town name'}
+                </p>
+              </div>
+            </div>
+            <div className="text-right hidden sm:block">
+              <span className="text-[11px] font-mono text-orange-400 group-hover:translate-x-1 inline-block transition-transform">
+                {isDetectingGps ? 'Detecting...' : 'Detect Now →'}
+              </span>
+            </div>
+          </button>
+
+          {/* GPS Error Alert */}
+          {gpsError && (
+            <div className="mt-2 p-2.5 rounded-lg bg-rose-950/80 border border-rose-600/30 flex items-center justify-between text-xs text-rose-200">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{gpsError}</span>
+              </div>
+              <button
+                onClick={dismissGpsError}
+                className="p-1 text-rose-300 hover:text-white rounded hover:bg-rose-900/50 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tab Buttons */}

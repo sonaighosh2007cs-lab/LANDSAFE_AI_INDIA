@@ -11,7 +11,6 @@ import { LocationAnalysisLoader } from './components/common/LocationAnalysisLoad
 
 // Route pages
 import { DashboardOverview } from './pages/DashboardOverview';
-import { DistanceRoutePage } from './pages/DistanceRoutePage';
 import { DisasterNewsPage } from './pages/DisasterNewsPage';
 import { LiveWeatherPage } from './pages/LiveWeatherPage';
 import { AiAgentPage } from './pages/AiAgentPage';
@@ -42,8 +41,6 @@ const MainLayout: React.FC = () => {
     switch (activeRoute) {
       case 'dashboard':
         return <DashboardOverview />;
-      case 'distance':
-        return <DistanceRoutePage />;
       case 'disaster-news':
         return <DisasterNewsPage />;
       case 'live-weather':

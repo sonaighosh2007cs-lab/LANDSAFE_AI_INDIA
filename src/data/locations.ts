@@ -2544,6 +2544,10 @@ export function resolveLocation(
     state: state.name.replace(' Δ (Hazard Monitored Sector)', '').replace(' (UT)', '').trim(),
     district: district.name.replace(/\([^)]*\)/g, '').trim(),
     area: matchedArea,
+    city: district.name.replace(/\([^)]*\)/g, '').trim(),
+    country: 'India',
+    latitude: district.coordinates.lat,
+    longitude: district.coordinates.lng,
     coordinates: district.coordinates,
     elevation: district.elevation,
     slopeAngle: district.slopeAngle,
@@ -2551,6 +2555,7 @@ export function resolveLocation(
     riskScore,
     riskLevel,
     isHazardMonitored: district.isHazardMonitored,
+    isGpsDetected: false,
   };
 }
 
@@ -2558,6 +2563,10 @@ export const DEFAULT_USER_LOCATION: UserLocation = {
   state: 'West Bengal',
   district: 'Darjeeling',
   area: 'Kurseong',
+  city: 'Darjeeling',
+  country: 'India',
+  latitude: 27.036,
+  longitude: 88.2627,
   coordinates: { lat: 27.036, lng: 88.2627 },
   elevation: 2042,
   slopeAngle: 32.0,
@@ -2565,6 +2574,7 @@ export const DEFAULT_USER_LOCATION: UserLocation = {
   riskScore: 82,
   riskLevel: 'CRITICAL',
   isHazardMonitored: true,
+  isGpsDetected: false,
 };
 
 // Search all localities in India

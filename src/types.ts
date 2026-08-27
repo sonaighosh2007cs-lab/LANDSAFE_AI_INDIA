@@ -1,19 +1,29 @@
 export type AgeGroup = 'Under 18' | '18–24' | '25–34' | '35–44' | '45–54' | '55+';
 
 export interface UserLocation {
-  state: string;
-  district: string;
+  // Single Source of Truth Coordinates & Full Geographic Hierarchy
+  latitude?: number;
+  longitude?: number;
   area: string;
+  city?: string;
+  district: string;
+  state: string;
+  country?: string;
+
+  // Normalized coordinates object
   coordinates: {
     lat: number;
     lng: number;
   };
+
+  // Dynamic Geological & Terrain Parameters
   elevation: number; // meters
   slopeAngle: number; // degrees
   lithology: string;
   riskScore: number; // 0-100
   riskLevel: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
   isHazardMonitored: boolean;
+  isGpsDetected?: boolean;
 }
 
 export interface UserProfile {
@@ -31,7 +41,6 @@ export interface UserProfile {
 
 export type AppRoute =
   | 'dashboard'
-  | 'distance'
   | 'disaster-news'
   | 'live-weather'
   | 'ai-agent'

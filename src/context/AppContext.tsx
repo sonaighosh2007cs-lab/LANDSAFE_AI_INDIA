@@ -18,12 +18,33 @@ import {
   INITIAL_CORRIDOR_SAFETY,
   INITIAL_ACTIVE_ADVISORY,
 } from '../data/disasterData';
+import {
+  buildChatbotContext,
+  loadChatHistory,
+  saveChatHistory,
+  clearChatHistory,
+  sendChatMessageApi,
+} from '../services/aiChatService';
+import { fetchValidatedWeather } from '../services/locationDataService';
+import { fetchDisasterNews } from '../services/disasterNewsClient';
+import {
+  getDeviceGpsCoordinates,
+  reverseGeocodeCoordinates,
+  buildUserLocationFromGps,
+  getNextLocationRequestId,
+  getCurrentLocationRequestId,
+} from '../services/geolocationService';
 
 interface AppContextType {
   userProfile: UserProfile;
   isOnboardingComplete: boolean;
   isAnalyzingLocation: boolean;
   analyzingLocationName: string;
+  isDetectingGps: boolean;
+  gpsStatusText: string;
+  gpsError: string | null;
+  detectAndApplyGpsLocation: () => Promise<UserLocation | null>;
+  dismissGpsError: () => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   setUserLocation: (location: UserLocation) => void;
   changeUserLocation: (location: UserLocation) => Promise<void>;
@@ -55,6 +76,7 @@ interface AppContextType {
   setIsAiAgentOpen: (open: boolean) => void;
   chatMessages: ChatMessage[];
   sendAiMessage: (message: string) => Promise<void>;
+  clearChatMessages: () => void;
   isAiTyping: boolean;
   resetOnboarding: () => void;
   savedLocations: UserLocation[];
@@ -102,15 +124,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAnalyzingLocation, setIsAnalyzingLocation] = useState(false);
   const [analyzingLocationName, setAnalyzingLocationName] = useState('');
 
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: 'msg-init',
+  // GPS Location Detection States
+  const [isDetectingGps, setIsDetectingGps] = useState(false);
+  const [gpsStatusText, setGpsStatusText] = useState('Detecting your location...');
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  const dismissGpsError = () => {
+    setGpsError(null);
+  };
+
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    const saved = loadChatHistory();
+    if (saved && saved.length > 0) {
+      return saved.map((s) => ({
+        id: s.id,
+        role: s.role,
+        content: s.content,
+        timestamp: s.timestamp,
+        source: s.source,
+      }));
+    }
+    return [
+      {
+        id: 'msg-init',
+        role: 'assistant',
+        content: `**Welcome to LandSafe AI Disaster Risk Assistant.**\n\nI am connected to the live telemetry stream for **${userProfile.location?.area || 'Monitoring Sector'}, ${userProfile.location?.district || 'District'} (${userProfile.location?.state || 'India'})**.\n\nAsk me about:\n- **Why is the risk high / moderate / low in ${userProfile.location?.area || 'your area'}?**\n- **Live rainfall, temperature, humidity & soil moisture**\n- **Safe evacuation corridors & highway statuses**\n- **Recent natural disaster news in India**\n\n*(You can ask in English, বাংলা, or हिन्दी)*`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        source: 'LANDSAFE_CORE_GEO_MESH',
+      },
+    ];
+  });
+
+  // Keep chat history in local storage
+  useEffect(() => {
+    if (chatMessages && chatMessages.length > 0) {
+      saveChatHistory(
+        chatMessages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+          source: m.source,
+          locationName: userProfile.location?.area,
+        }))
+      );
+    }
+  }, [chatMessages, userProfile.location?.area]);
+
+  const clearChatMessages = () => {
+    clearChatHistory();
+    const loc = userProfile.location || DEFAULT_USER_LOCATION;
+    const initialGreeting: ChatMessage = {
+      id: `msg-init-${Date.now()}`,
       role: 'assistant',
-      content: `**Welcome to LandSafe AI Geotechnical Assistant.**\n\nI am connected to the India Geological Survey (GSI) hazard mesh, IMD Doppler radars, and local borehole piezometers for **${userProfile.location?.district || 'Monitoring Area'}, ${userProfile.location?.state || 'India'}**.\n\nAsk me about:\n- Current slope factor of safety & pore saturation\n- Safe highway routes and landslide roadblocks\n- Emergency SDRF/NDRF evacuation shelters nearby\n- Rainfall threshold triggers in your area`,
+      content: `**Welcome to LandSafe AI Disaster Risk Assistant.**\n\nI am connected to the live telemetry stream for **${loc.area || 'Monitoring Sector'}, ${loc.district || 'District'} (${loc.state || 'India'})**.\n\nAsk me about:\n- **Why is the risk high / moderate / low in ${loc.area || 'your area'}?**\n- **Live rainfall, temperature, humidity & soil moisture**\n- **Safe evacuation corridors & highway statuses**\n- **Recent natural disaster news in India**\n\n*(You can ask in English, বাংলা, or हिन्दी)*`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       source: 'LANDSAFE_CORE_GEO_MESH',
-    },
-  ]);
+    };
+    setChatMessages([initialGreeting]);
+  };
 
   // Persist profile whenever onboarded
   useEffect(() => {
@@ -132,15 +204,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const setUserLocation = (location: UserLocation) => {
-    setUserProfile((prev) => ({
-      ...prev,
-      location,
-      savedLocations: prev.savedLocations?.some(
-        (l) => l.district === location.district && l.area === location.area
-      )
-        ? prev.savedLocations
-        : [...(prev.savedLocations || []), location],
-    }));
+    // Invalidate any ongoing GPS requests so manual or newer actions always prevail
+    getNextLocationRequestId();
+
+    setUserProfile((prev) => {
+      const updatedProfile: UserProfile = {
+        ...prev,
+        location,
+        savedLocations: prev.savedLocations?.some(
+          (l) => l.district === location.district && l.area === location.area
+        )
+          ? prev.savedLocations
+          : [...(prev.savedLocations || []), location],
+      };
+
+      // Persist immediately to localStorage
+      if (updatedProfile.onboarded && updatedProfile.name) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProfile));
+        } catch (e) {
+          console.error('Storage error:', e);
+        }
+      }
+
+      return updatedProfile;
+    });
   };
 
   // Change location with realistic analysis loading animation and clean UI feedback
@@ -151,6 +239,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     await new Promise((resolve) => setTimeout(resolve, 650));
     setIsAnalyzingLocation(false);
+  };
+
+  // Real-time GPS Location Detection with Device Geolocation API & Reverse Geocoding
+  const detectAndApplyGpsLocation = async (): Promise<UserLocation | null> => {
+    const reqId = getNextLocationRequestId();
+    setIsDetectingGps(true);
+    setGpsStatusText('Detecting your location...');
+    setGpsError(null);
+
+    try {
+      // 1. Get real GPS coordinates from browser Geolocation API
+      const { latitude, longitude } = await getDeviceGpsCoordinates(12000);
+
+      // Check for race condition
+      if (reqId !== getCurrentLocationRequestId()) {
+        return null;
+      }
+
+      setGpsStatusText('Reverse geocoding area name...');
+
+      // 2. Reverse geocode to exact locality name following: Locality -> City/Town -> District -> State
+      const geoResult = await reverseGeocodeCoordinates(latitude, longitude);
+
+      if (reqId !== getCurrentLocationRequestId()) {
+        return null;
+      }
+
+      // 3. Build comprehensive UserLocation
+      const newGpsLocation = buildUserLocationFromGps(latitude, longitude, geoResult);
+
+      // 4. Update the single source of truth
+      setUserLocation(newGpsLocation);
+      setAnalyzingLocationName(`${newGpsLocation.area}, ${newGpsLocation.state}`);
+
+      return newGpsLocation;
+    } catch (err: any) {
+      if (reqId === getCurrentLocationRequestId()) {
+        const errorMsg =
+          err.userFriendlyMessage ||
+          err.message ||
+          'Unable to detect your GPS position. Please choose a location manually.';
+        setGpsError(errorMsg);
+      }
+      return null;
+    } finally {
+      if (reqId === getCurrentLocationRequestId()) {
+        setIsDetectingGps(false);
+        setGpsStatusText('Detecting your location...');
+      }
+    }
   };
 
   // Login existing user directly and restore dashboard and location
@@ -275,7 +413,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       role: 'user',
-      content: messageText,
+      content: messageText.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -283,29 +421,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAiTyping(true);
 
     try {
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: messageText,
-          location: userProfile.location,
-          context: {
-            scenario,
-            riskScore,
-            telemetry,
-            user: userProfile.name,
-          },
-        }),
+      // 1. Fetch live weather telemetry
+      let weatherData: any = null;
+      try {
+        weatherData = await fetchValidatedWeather(locationObj);
+      } catch (e) {
+        // non-blocking fallback
+      }
+
+      // 2. Fetch live natural disaster news
+      let newsItems: any[] = [];
+      try {
+        const newsResp = await fetchDisasterNews({ timeframe: 'today', location: locationObj });
+        newsItems = newsResp.articles || [];
+      } catch (e) {
+        // non-blocking
+      }
+
+      // 3. Build comprehensive structured context
+      const chatbotContext = buildChatbotContext({
+        location: locationObj,
+        telemetry,
+        riskScore,
+        riskDelta,
+        riskLevel,
+        scenario,
+        weatherData,
+        newsItems,
+        corridorSafety,
+        activeAdvisory,
       });
 
-      const data = await response.json();
+      // 4. Send to secure backend API
+      const result = await sendChatMessageApi(
+        messageText.trim(),
+        chatbotContext,
+        chatMessages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+        }))
+      );
 
       const aiMsg: ChatMessage = {
         id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: data.reply || 'Analysis completed with nominal slope readings.',
+        content: result.reply || 'Analysis completed with nominal telemetry readings.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        source: data.source || 'LANDSAFE_INTELLIGENCE_ENGINE',
+        source: result.source || 'LANDSAFE_ASSISTANT_ENGINE',
       };
 
       setChatMessages((prev) => [...prev, aiMsg]);
@@ -314,7 +478,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const fallbackMsg: ChatMessage = {
         id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: `**Geotechnical Advisory for ${userProfile.location?.district || 'your sector'}:** Telemetry readings show ${riskScore}% instability index with ${telemetry.precipitation.value} mm rainfall. Slopes along primary arterial corridors remain under automated monitoring. Stay alert for official NDMA bulletins.`,
+        content: `**Geotechnical Advisory for ${userProfile.location?.area || userProfile.location?.district || 'your sector'}:** Live sensor readings report a calculated instability probability of **${riskScore}%** with **${telemetry.precipitation.value} mm** precipitation and **${telemetry.soilMoisture.value}%** soil saturation. Slopes remain under continuous telemetry monitoring.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         source: 'LANDSAFE_OFFLINE_GEO_CACHE',
       };
@@ -331,6 +495,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isOnboardingComplete,
         isAnalyzingLocation,
         analyzingLocationName,
+        isDetectingGps,
+        gpsStatusText,
+        gpsError,
+        detectAndApplyGpsLocation,
+        dismissGpsError,
         updateUserProfile,
         setUserLocation,
         changeUserLocation,
@@ -353,6 +522,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsAiAgentOpen,
         chatMessages,
         sendAiMessage,
+        clearChatMessages,
         isAiTyping,
         resetOnboarding,
         loginUser,

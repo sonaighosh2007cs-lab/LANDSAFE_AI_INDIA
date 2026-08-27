@@ -133,4 +133,62 @@
   animation: soft-pulse 2.4s ease-in-out infinite;
 }
 
+/* Chat Assistant Markdown Content Styling */
+.chat-markdown-body p {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+.chat-markdown-body p:last-child {
+  margin-bottom: 0;
+}
+.chat-markdown-body strong {
+  font-weight: 700;
+  color: #f1f5f9;
+}
+.chat-markdown-body ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.chat-markdown-body ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.chat-markdown-body li {
+  line-height: 1.5;
+}
+.chat-markdown-body h1, .chat-markdown-body h2, .chat-markdown-body h3, .chat-markdown-body h4 {
+  font-weight: 700;
+  color: #34d399;
+  margin-top: 0.65rem;
+  margin-bottom: 0.35rem;
+}
+.chat-markdown-body h3 {
+  font-size: 0.875rem;
+}
+.chat-markdown-body blockquote {
+  border-left: 3px solid #10b981;
+  padding-left: 0.75rem;
+  color: #94a3b8;
+  margin: 0.5rem 0;
+}
+.chat-markdown-body code {
+  background-color: #0d1b2a;
+  border: 1px solid #1e3a5f;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8em;
+  color: #6ee7b7;
+}
+
 

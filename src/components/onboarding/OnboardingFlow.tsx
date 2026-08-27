@@ -31,6 +31,11 @@ import {
   findNearestLocationByCoordinates,
   FlatLocationResult,
 } from '../../data/locations';
+import {
+  getDeviceGpsCoordinates,
+  reverseGeocodeCoordinates,
+  buildUserLocationFromGps,
+} from '../../services/geolocationService';
 import { UserLocation } from '../../types';
 import { LandSafeLogo } from '../common/LandSafeLogo';
 import {
@@ -38,6 +43,7 @@ import {
   clientRegister,
   clientResetPassword,
 } from '../../services/authClient';
+import loginBackgroundImg from '../../assets/LandSafe_AI_Login_Background_07_2560x1440.png';
 
 type OnboardingStep =
   | 'welcome'
@@ -159,33 +165,32 @@ export const OnboardingFlow: React.FC = () => {
 
   // --- Handlers ---
 
-  // Handle GPS Current Location Request
-  const handleUseCurrentLocation = () => {
+  // Handle GPS Current Location Request with accurate reverse geocoding
+  const handleUseCurrentLocation = async () => {
     setGpsNotice(null);
-    if (!navigator.geolocation) {
-      setGpsNotice('Geolocation is not supported by your browser. You can select your location manually.');
-      return;
-    }
-
     setGpsLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const matched = findNearestLocationByCoordinates(latitude, longitude);
-        setSelectedLocation(matched);
-        setGpsLoading(false);
-        setStep('location-confirm');
-      },
-      (err) => {
-        setGpsLoading(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setGpsNotice('Location permission was not granted. You can select your location manually below.');
-        } else {
-          setGpsNotice('Unable to retrieve your current GPS coordinates. Please select your location manually.');
-        }
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
+
+    try {
+      // 1. Get browser GPS coordinates
+      const { latitude, longitude } = await getDeviceGpsCoordinates(12000);
+
+      // 2. Reverse geocode to exact locality name
+      const geoResult = await reverseGeocodeCoordinates(latitude, longitude);
+
+      // 3. Build comprehensive UserLocation
+      const matched = buildUserLocationFromGps(latitude, longitude, geoResult);
+
+      setSelectedLocation(matched);
+      setStep('location-confirm');
+    } catch (err: any) {
+      const errorMsg =
+        err.userFriendlyMessage ||
+        err.message ||
+        'Unable to retrieve your current GPS coordinates. Please select your location manually.';
+      setGpsNotice(errorMsg);
+    } finally {
+      setGpsLoading(false);
+    }
   };
 
   // Handle Manual Selection
@@ -341,18 +346,36 @@ export const OnboardingFlow: React.FC = () => {
   return (
     <div
       id="landsafe-onboarding-container"
-      className="min-h-screen w-full text-slate-100 flex flex-col justify-between relative overflow-x-hidden font-sans select-none bg-cover bg-center bg-no-repeat bg-fixed"
+      className="min-h-screen w-full text-slate-100 flex flex-col justify-between relative overflow-hidden font-sans select-none bg-cover bg-center bg-no-repeat bg-[#050c18]"
       style={{
-        backgroundImage: `url('/LandSafe_AI_Login_Background_07_2560x1440.png')`,
-        backgroundColor: '#060c17',
+        backgroundImage: `url(${loginBackgroundImg}), url('/login-background.png'), url('/LandSafe_AI_Login_Background_07_2560x1440.png')`,
       }}
     >
-      {/* Background Overlay: Dark slate/navy semi-transparent overlay to ensure WCAG AA contrast and sharp readability */}
-      <div className="absolute inset-0 bg-[#040914]/75 sm:bg-[#040914]/70 backdrop-blur-[1px] pointer-events-none z-0" />
+      {/* 1. Cinematic Nature Mountain & Storm Background Image (Guaranteed 100% Visibility) */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <img
+          src={loginBackgroundImg || '/login-background.png'}
+          alt="LandSafe AI Indian Monsoon Mountain Landscape"
+          className="w-full h-full object-cover object-center"
+          loading="eager"
+          decoding="sync"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (target.src.indexOf('/login-background.png') === -1) {
+              target.src = '/login-background.png';
+            } else if (target.src.indexOf('/LandSafe_AI_Login_Background_07_2560x1440.png') === -1) {
+              target.src = '/LandSafe_AI_Login_Background_07_2560x1440.png';
+            }
+          }}
+        />
+        {/* Balanced transparent gradient so mountains, lightning, river, waterfall & forest are clearly visible */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#030814]/40 via-transparent to-[#02050e]/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-[#040914]/20 to-[#020610]/75 pointer-events-none" />
 
-      {/* Subtle atmospheric ambient glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/10 blur-[140px] pointer-events-none z-0" />
-      <div className="absolute bottom-10 right-10 w-[500px] h-[320px] bg-blue-500/10 blur-[120px] pointer-events-none z-0" />
+        {/* Ambient storm aura highlights */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-cyan-500/10 blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-[500px] h-[320px] bg-emerald-500/10 blur-[120px] pointer-events-none" />
+      </div>
 
       {/* Top Simple Header */}
       <header className="w-full border-b border-[#142844]/80 bg-[#071322]/85 backdrop-blur-xl px-6 py-4 flex items-center justify-between z-20 shadow-lg">
@@ -1367,18 +1390,22 @@ export const OnboardingFlow: React.FC = () => {
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <div className="flex items-center gap-2">
-                  <LandSafeLogo size="xs" className="w-5 h-5" />
-                  <span className="text-[11px] font-mono text-emerald-400 uppercase">Operator Login</span>
-                </div>
+                <span className="text-[11px] font-mono text-emerald-400 uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/50">
+                  Operator Portal
+                </span>
               </div>
 
-              <h2 className="text-2xl font-bold text-white tracking-tight mb-1">
-                Log in to LandSafe AI
-              </h2>
-              <p className="text-slate-400 text-xs mb-6">
-                Access your saved monitoring district, early alerts, and sensor telemetry.
-              </p>
+              <div className="text-center mb-6">
+                <div className="flex justify-center mb-3">
+                  <LandSafeLogo size="lg" className="w-14 h-14 hover:scale-105 transition-transform duration-200" />
+                </div>
+                <h2 className="text-2xl font-bold text-white tracking-tight">
+                  Log in to LandSafe <span className="text-[#00d492]">AI</span>
+                </h2>
+                <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                  Access your monitoring district, early hazard alerts, and real-time sensor telemetry.
+                </p>
+              </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>

@@ -8,6 +8,7 @@ import { fetchLiveAqiData } from "./server/aqiService";
 import { getHistoricalTelemetry, HistoryTimeRange } from "./server/historyService";
 import { registerUser, loginUser, resetPassword } from "./server/authService";
 import { getIndianDisasterNews, DisasterCategory } from "./server/disasterNewsService";
+import { processChatRequest } from "./server/aiAssistantEngine";
 
 dotenv.config();
 
@@ -118,6 +119,164 @@ app.get("/api/news/disaster", async (req, res) => {
   }
 });
 
+// Live Reverse Geocoding Endpoint for Dynamic GPS Location Detection
+app.get("/api/geocode/reverse", async (req, res) => {
+  try {
+    const lat = parseFloat(req.query.lat as string);
+    const lng = parseFloat(req.query.lng as string);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      return res.status(400).json({ error: "Valid latitude and longitude are required" });
+    }
+
+    // 1. Fetch reverse geocode details from OpenStreetMap Nominatim
+    let area = "";
+    let city = "";
+    let district = "";
+    let state = "India";
+    let country = "India";
+    let fullAddress = "";
+
+    try {
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=18`,
+        {
+          headers: {
+            "Accept-Language": "en",
+            "User-Agent": "LandSafe-AI-Disaster-Intelligence/2.5 (contact: support@landsafe.ai)",
+          },
+        }
+      );
+
+      if (geoRes.ok) {
+        const geoData = (await geoRes.json()) as any;
+        const addr = geoData.address || {};
+
+        // Most specific locality / area name
+        const locality =
+          addr.suburb ||
+          addr.neighbourhood ||
+          addr.quarter ||
+          addr.residential ||
+          addr.village ||
+          addr.hamlet ||
+          addr.city_district ||
+          addr.town ||
+          addr.municipality ||
+          addr.city;
+
+        city =
+          addr.city ||
+          addr.town ||
+          addr.municipality ||
+          addr.village ||
+          addr.county ||
+          "Detected City";
+
+        district =
+          addr.state_district ||
+          addr.district ||
+          addr.county ||
+          addr.city ||
+          "Local District";
+
+        state = addr.state || addr.province || "India";
+        country = addr.country || "India";
+
+        // Fallback order: Locality -> City/Town -> District -> State
+        area = locality || city || district || state || `GPS (${lat.toFixed(3)}, ${lng.toFixed(3)})`;
+        fullAddress = geoData.display_name || `${area}, ${district}, ${state}`;
+      }
+    } catch (geoErr) {
+      console.warn("Server OSM Nominatim reverse geocode fetch notice:", geoErr);
+    }
+
+    // If area not resolved, generate dynamic coordinate descriptor
+    if (!area) {
+      area = `GPS Sector [${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E]`;
+      city = "Local Sector";
+      district = "Detected Region";
+      state = "India";
+      country = "India";
+    }
+
+    // 2. Fetch elevation via Open-Meteo elevation API or default terrain model
+    let elevation = 250;
+    try {
+      const elevRes = await fetch(
+        `https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`
+      );
+      if (elevRes.ok) {
+        const elevData = (await elevRes.json()) as any;
+        if (Array.isArray(elevData.elevation) && typeof elevData.elevation[0] === "number") {
+          elevation = Math.round(elevData.elevation[0]);
+        }
+      }
+    } catch (elevErr) {
+      // terrain fallback
+      if (lat > 26 && lat < 36 && lng > 73 && lng < 96) elevation = 1650;
+      else if (lat >= 8 && lat <= 20 && lng >= 73 && lng <= 77.5) elevation = 850;
+    }
+
+    // 3. Determine Terrain & Landslide Hazard Parameters
+    const isHimalayan = lat > 26 && lat < 36 && lng > 73 && lng < 96;
+    const isWesternGhats = lat >= 8 && lat <= 20 && lng >= 73 && lng <= 77.5;
+    const isNorthEast = lat > 22 && lat <= 29 && lng >= 89 && lng <= 97;
+
+    let slopeAngle = 12;
+    let lithology = "Quaternary Alluvial Silt & Sedimentary Deposit";
+    let isHazardMonitored = false;
+    let riskScore = 24;
+
+    if (isHimalayan || isNorthEast) {
+      slopeAngle = Math.min(48, Math.max(26, Math.round(elevation / 65) + 12));
+      lithology = "Gneissic Metamorphic Colluvium & Weathered Phyllite Schist";
+      isHazardMonitored = true;
+      riskScore = Math.min(92, Math.max(65, Math.round(elevation / 35) + 20));
+    } else if (isWesternGhats) {
+      slopeAngle = Math.min(38, Math.max(20, Math.round(elevation / 70) + 10));
+      lithology = "Lateritic Basalt & Weathered Khondalite Plateau";
+      isHazardMonitored = true;
+      riskScore = Math.min(84, Math.max(52, Math.round(elevation / 40) + 15));
+    } else if (elevation > 500) {
+      slopeAngle = 18;
+      lithology = "Peninsular Crystalline Gneiss & Granulite";
+      isHazardMonitored = false;
+      riskScore = 38;
+    }
+
+    const riskLevel =
+      riskScore >= 75 ? "CRITICAL" : riskScore >= 50 ? "HIGH" : riskScore >= 30 ? "MODERATE" : "LOW";
+
+    res.setHeader("Cache-Control", "public, max-age=600");
+    return res.json({
+      success: true,
+      latitude: lat,
+      longitude: lng,
+      area,
+      city,
+      district,
+      state,
+      country,
+      displayLocation: `${area}, ${state}`,
+      fullAddress,
+      elevation,
+      slopeAngle,
+      lithology,
+      riskScore,
+      riskLevel,
+      isHazardMonitored,
+      isGpsDetected: true,
+    });
+  } catch (error: any) {
+    console.error("Reverse geocoding endpoint error:", error);
+    return res.status(500).json({
+      error: "Unable to reverse geocode coordinates",
+      message: error.message || String(error),
+    });
+  }
+});
+
 // Live Weather Endpoint for any location in India via Latitude & Longitude
 app.get("/api/weather/live", async (req, res) => {
   try {
@@ -218,65 +377,66 @@ app.get("/api/history/telemetry", async (req, res) => {
 // AI Agent Chat Endpoint
 app.post("/api/ai/chat", async (req, res) => {
   try {
-    const { message, context, location } = req.body;
-    if (!message) {
+    const { message, context, location, history } = req.body;
+    if (!message || typeof message !== "string" || !message.trim()) {
       return res.status(400).json({ error: "Message is required" });
     }
 
     const ai = getGeminiClient();
 
-    if (!ai) {
-      // High-fidelity domain-intelligent fallback response if GEMINI_API_KEY is not configured
-      const area = location?.area || "Champhai";
-      const district = location?.district || "Champhai";
-      const state = location?.state || "Mizoram";
-      const risk = location?.riskScore ?? 28;
+    // Reconstruct full structured context if sent as location or context object
+    const finalContext = context?.website
+      ? context
+      : {
+          website: "LandSafe AI",
+          timestamp: new Date().toISOString(),
+          location: {
+            name: location?.area || location?.district || context?.location?.name || "Current Sector",
+            area: location?.area || context?.location?.area || "Sector",
+            district: location?.district || context?.location?.district || "District",
+            state: location?.state || context?.location?.state || "India",
+            country: "India",
+            coordinates: location?.coordinates || context?.location?.coordinates,
+            elevation: location?.elevation || context?.environment?.elevation,
+            slopeAngle: location?.slopeAngle || context?.environment?.slope,
+            lithology: location?.lithology || context?.environment?.lithology,
+          },
+          risk: {
+            score: location?.riskScore ?? context?.risk?.score ?? 28,
+            level: location?.riskLevel ?? context?.risk?.level ?? "LOW",
+            delta: context?.risk?.delta ?? "0%",
+            scenario: context?.scenario || context?.risk?.scenario || "MONSOON_SURGE",
+          },
+          weather: context?.weather || {
+            temperature: context?.telemetry?.temperature?.value ?? 22,
+            apparentTemperature: context?.telemetry?.temperature?.value ?? 22,
+            humidity: context?.telemetry?.humidity?.value ?? 80,
+            rainfall: context?.telemetry?.precipitation?.value ?? 8.2,
+            windSpeed: 14,
+            condition: "Monitored Conditions",
+            aqi: 45,
+            aqiCategory: "Good",
+            isLiveTelemetry: false,
+          },
+          environment: context?.environment || {
+            slope: location?.slopeAngle ?? context?.telemetry?.slopeAngle?.value ?? 14.5,
+            slopeGradient: context?.telemetry?.slopeAngle?.gradient ?? "Moderate Incline",
+            soilMoisture: context?.telemetry?.soilMoisture?.value ?? 67,
+            soilSaturation: context?.telemetry?.soilMoisture?.saturation ?? "Nominal",
+            elevation: location?.elevation ?? context?.telemetry?.elevation?.value ?? 1800,
+            groundDisplacement: context?.telemetry?.groundDisplacement ? `${context.telemetry.groundDisplacement.value} mm` : "Nominal",
+            porePressure: context?.telemetry?.groundCondition ? `${context.telemetry.groundCondition.value} kPa` : "Baseline",
+          },
+          recentDisasters: context?.recentDisasters || [],
+          activeAdvisories: context?.activeAdvisories || [],
+          safeCorridors: context?.safeCorridors || [],
+        };
 
-      let fallbackReply = "";
-      const lower = message.toLowerCase();
+    const result = await processChatRequest(message.trim(), finalContext, history || [], ai);
 
-      if (lower.includes("risk") || lower.includes("safe") || lower.includes("condition")) {
-        fallbackReply = `**LandSafe AI Geological Assessment for ${area}, ${district} (${state}):**\n\n- **Current Hazard Tier:** ${risk > 65 ? "HIGH / CRITICAL RISK" : risk > 40 ? "MODERATE RISK" : "LOW RISK (Nominal: " + risk + "/100)"}\n- **Pore-Water Saturation:** 67% (Within baseline parameters)\n- **24-Hour Cumulative Rainfall:** 8.2 mm\n- **Slope Stability Index (Factor of Safety):** 1.48 (Stable)\n- **Advisory:** Hillside cut slopes along main roads are currently stable. Maintain normal monitoring of drainage outlets.`;
-      } else if (lower.includes("evacuat") || lower.includes("shelter") || lower.includes("emergency") || lower.includes("help")) {
-        fallbackReply = `**Emergency & Evacuation Protocol for ${district} Sector:**\n\n1. **Designated Relief Camps:** Government Higher Secondary School, Khawzawl Community Hall, SDRF Emergency Staging Area (Capacity: 450 persons).\n2. **Emergency Hotlines:**\n   - District Disaster Control: **1077**\n   - National Emergency Helpline: **112**\n   - SDRF 1st Battalion Control: **0389-2334882**\n3. **Evacuation Corridor:** Primary transit route via NH-102 Bypass towards Champhai North Ridge.`;
-      } else if (lower.includes("weather") || lower.includes("rain") || lower.includes("monsoon")) {
-        fallbackReply = `**IMD Doppler Radar Telemetry Update:**\n\n- **Current Precipitation:** 8.2 mm/hr (Light to Moderate)\n- **Atmospheric Vapor Index:** 99% Humidity\n- **48-Hour Precipitation Outlook:** Isolated moderate showers anticipated along ridge lines. Landslide threshold rainfall trigger is calculated at 65 mm/24h.`;
-      } else {
-        fallbackReply = `**LandSafe AI Geotechnical Agent:**\n\nI am actively analyzing multi-sensor telemetry across ${area} and the ${state} sector. Integrated data feeds from GSI (Geological Survey of India) and IMD Doppler radars indicate nominal slope pore-pressures with low creep velocity (+23.6 mm/24h baseline). How can I assist you with specific slope stability calculations, weather telemetry, or emergency evacuation routing?`;
-      }
-
-      return res.json({
-        reply: fallbackReply,
-        source: "LANDSAFE_FALLBACK_GEO_ENGINE",
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Call Gemini with server-side SDK
-    const prompt = `You are LandSafe AI (also known as Landscape AI), an expert geological hazard intelligence and geotechnical early-warning assistant dedicated to India.
-User Location: ${location?.area || "Champhai"}, ${location?.district || "Champhai"}, ${location?.state || "Mizoram"}, India.
-Current Regional Instability Probability: ${location?.riskScore || 28}%.
-Sensor Mesh Telemetry: Rainfall 8.2mm, Soil Moisture 67%, Slope 14.5°, Ground Displacement 215.3mm, Elevation 2100m, Humidity 99%.
-Context: ${JSON.stringify(context || {})}
-
-Provide clear, professional, authoritative, and life-saving geotechnical advice. Format key points with markdown bullet points. Never hallucinate fake government orders. When discussing evacuation, reference Indian agencies like NDMA, SDRF, GSI, and BRO.
-
-User Question: ${message}`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
-      contents: prompt,
-    });
-
-    const reply = response.text || "No response generated from AI engine.";
-
-    return res.json({
-      reply,
-      source: "GEMINI_3_7_FLASH_SERVER",
-      timestamp: new Date().toISOString(),
-    });
+    return res.json(result);
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
+    console.error("AI chat processing error:", error);
     return res.status(500).json({
       error: "AI analysis service error",
       details: error.message || String(error),

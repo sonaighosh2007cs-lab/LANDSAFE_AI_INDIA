@@ -40,7 +40,7 @@ const TIME_RANGES: { id: HistoryTimeRange; label: string; subLabel: string }[] =
 ];
 
 export const GsiHistoricalAnalysisPage: React.FC = () => {
-  const { userProfile, setIsLocationSelectorOpen } = useApp();
+  const { userProfile, setIsLocationModalOpen } = useApp();
   const location = userProfile.location;
 
   const [timeRange, setTimeRange] = useState<HistoryTimeRange>('7d');
@@ -134,7 +134,7 @@ export const GsiHistoricalAnalysisPage: React.FC = () => {
               </div>
 
               <button
-                onClick={() => setIsLocationSelectorOpen(true)}
+                onClick={() => setIsLocationModalOpen(true)}
                 className="px-2.5 py-1 rounded-xl bg-[#0e2238] hover:bg-[#143252] border border-[#1b385a] text-slate-300 hover:text-white text-xs font-mono transition-colors cursor-pointer flex items-center gap-1"
                 id="btn-switch-history-location"
               >

@@ -82,12 +82,6 @@ export const Footer: React.FC = () => {
             >
               Sensor Telemetry Health
             </button>
-            <button
-              onClick={() => setActiveRoute('distance')}
-              className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-            >
-              Safe Corridors
-            </button>
           </div>
         </div>
 
