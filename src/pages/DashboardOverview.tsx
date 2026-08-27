@@ -193,7 +193,7 @@ export const DashboardOverview: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Action buttons */}
+          {/* Right Action button */}
           <div className="flex flex-row lg:flex-col gap-2.5 shrink-0">
             <button
               onClick={() => setActiveRoute('ai-risk-engineering')}
@@ -201,13 +201,6 @@ export const DashboardOverview: React.FC = () => {
             >
               <Activity className="w-3.5 h-3.5 text-orange-400" />
               <span>XAI Engineering</span>
-            </button>
-            <button
-              onClick={() => setActiveRoute('distance')}
-              className="interactive-btn flex-1 lg:flex-none px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-orange-500/50 hover:bg-white/10 text-xs font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Compass className="w-3.5 h-3.5 text-amber-400" />
-              <span>Safe Corridor Map</span>
             </button>
           </div>
         </div>
@@ -541,10 +534,10 @@ export const DashboardOverview: React.FC = () => {
           </div>
 
           <button
-            onClick={() => setActiveRoute('distance')}
+            onClick={() => setActiveRoute('india-map')}
             className="interactive-btn w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-orange-400 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
-            <span>View Distance & Safe Highway Corridors</span>
+            <span>Explore Safe Corridors on India Map</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

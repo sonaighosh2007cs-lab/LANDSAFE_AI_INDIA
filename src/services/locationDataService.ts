@@ -2,6 +2,7 @@ import { UserLocation, SensorTelemetry, CorridorSafety, ActiveAdvisory } from '.
 import { WeatherData } from '../types/weather';
 import { AqiData } from '../types/aqi';
 import { getLocationTelemetry, getLocationCorridorSafety, getLocationAdvisory } from '../data/disasterData';
+import { fetchDirectClientWeather } from './weatherClient';
 
 /**
  * Robust in-memory cache for location-dependent asynchronous data.
@@ -24,7 +25,9 @@ export function getLocationCacheKey(lat: number, lng: number): string {
 }
 
 /**
- * Fetch live weather data with location validation and caching.
+ * Fetch live weather data with multi-tier deployment resilience:
+ * Tier 1: Server endpoint (/api/weather/live) when running in full-stack Express mode.
+ * Tier 2: Direct Open-Meteo Client Mesh when deployed statically on GitHub Pages / Vercel / Netlify.
  */
 export async function fetchValidatedWeather(
   location: UserLocation,
@@ -33,7 +36,7 @@ export async function fetchValidatedWeather(
   const { lat, lng } = location.coordinates;
   const key = getLocationCacheKey(lat, lng);
 
-  // Check cache validity
+  // 1. Check in-memory cache validity
   const cached = weatherCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.data;
@@ -44,31 +47,41 @@ export async function fetchValidatedWeather(
   const stateParam = encodeURIComponent(location.state || '');
   const elevParam = location.elevation ? `&elevation=${location.elevation}` : '';
 
-  const url = `/api/weather/live?lat=${lat}&lng=${lng}&area=${areaParam}&district=${districtParam}&state=${stateParam}${elevParam}`;
+  // 2. Try server API route first (active in local dev and full-stack deployments)
+  try {
+    const url = `/api/weather/live?lat=${lat}&lng=${lng}&area=${areaParam}&district=${districtParam}&state=${stateParam}${elevParam}`;
+    const res = await fetch(url, { signal });
+    const contentType = res.headers.get('content-type') || '';
 
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    throw new Error(`Weather telemetry service responded with status ${res.status}`);
-  }
-
-  const data: WeatherData = await res.json();
-
-  // Validate that returned data corresponds to requested coordinates (within 0.1 degree)
-  if (
-    data.location &&
-    typeof data.location.latitude === 'number' &&
-    typeof data.location.longitude === 'number'
-  ) {
-    const latDiff = Math.abs(data.location.latitude - lat);
-    const lngDiff = Math.abs(data.location.longitude - lng);
-    if (latDiff > 1.5 || lngDiff > 1.5) {
-      console.warn('Weather data coordinate mismatch detected. Re-tagging location meta.');
+    if (res.ok && contentType.includes('application/json')) {
+      const data: WeatherData = await res.json();
+      if (data && data.current && typeof data.current.temperature === 'number') {
+        data.location = {
+          ...data.location,
+          name: location.area,
+          district: location.district,
+          state: location.state,
+          latitude: lat,
+          longitude: lng,
+          elevation: location.elevation,
+        };
+        weatherCache.set(key, { data, lat, lng, timestamp: Date.now() });
+        return data;
+      }
     }
+  } catch (serverErr: any) {
+    if (serverErr.name === 'AbortError') {
+      throw serverErr;
+    }
+    // Server route unavailable (expected on static GitHub Pages deployment); proceed to client fetch
   }
 
-  // Ensure location meta in the weather data reflects the requested user location
-  data.location = {
-    ...data.location,
+  // 3. Direct Client-Side Meteorological Telemetry Fetch (100% real live data via Open-Meteo)
+  const clientData = await fetchDirectClientWeather(location, signal);
+
+  // Validate coordinates and ensure metadata reflects requested user location
+  clientData.location = {
+    ...clientData.location,
     name: location.area,
     district: location.district,
     state: location.state,
@@ -79,13 +92,13 @@ export async function fetchValidatedWeather(
 
   // Cache result
   weatherCache.set(key, {
-    data,
+    data: clientData,
     lat,
     lng,
     timestamp: Date.now(),
   });
 
-  return data;
+  return clientData;
 }
 
 /**

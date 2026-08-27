@@ -1,5 +1,6 @@
 import { UserLocation } from '../types';
 import { HistoryTimeRange, LocationHistoricalResponse, HistoricalRecordPoint } from '../types/history';
+import { fetchClientDirectHistory } from './historyClient';
 
 interface HistoryCacheEntry {
   data: LocationHistoricalResponse;
@@ -40,18 +41,50 @@ export async function fetchValidatedHistory(
   const slopeParam = location.slopeAngle ? `&slopeAngle=${location.slopeAngle}` : '';
   const lithParam = location.lithology ? `&lithology=${encodeURIComponent(location.lithology)}` : '';
 
-  const url = `/api/history/telemetry?lat=${lat}&lng=${lng}&range=${timeRange}&city=${cityParam}&district=${districtParam}&state=${stateParam}${elevParam}${slopeParam}${lithParam}`;
+  // 1. Try server route if available
+  try {
+    const url = `/api/history/telemetry?lat=${lat}&lng=${lng}&range=${timeRange}&city=${cityParam}&district=${districtParam}&state=${stateParam}${elevParam}${slopeParam}${lithParam}`;
+    const res = await fetch(url, { signal });
+    const contentType = res.headers.get('content-type') || '';
 
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    throw new Error(`Historical service responded with status ${res.status}`);
+    if (res.ok && contentType.includes('application/json')) {
+      const data: LocationHistoricalResponse = await res.json();
+      if (data && data.records && Array.isArray(data.records)) {
+        data.location = {
+          ...data.location,
+          city: location.area,
+          district: location.district,
+          state: location.state,
+          latitude: lat,
+          longitude: lng,
+          elevation: location.elevation,
+          slopeAngle: location.slopeAngle,
+          lithology: location.lithology,
+        };
+
+        historyCache.set(cacheKey, {
+          data,
+          lat,
+          lng,
+          timeRange,
+          timestamp: Date.now(),
+        });
+
+        return data;
+      }
+    }
+  } catch (serverErr: any) {
+    if (serverErr.name === 'AbortError') {
+      throw serverErr;
+    }
+    // Proceed to client direct history fallback
   }
 
-  const data: LocationHistoricalResponse = await res.json();
+  // 2. Direct client fallback via Open-Meteo
+  const clientData = await fetchClientDirectHistory(location, timeRange, signal);
 
-  // Validate location consistency
-  data.location = {
-    ...data.location,
+  clientData.location = {
+    ...clientData.location,
     city: location.area,
     district: location.district,
     state: location.state,
@@ -62,16 +95,15 @@ export async function fetchValidatedHistory(
     lithology: location.lithology,
   };
 
-  // Cache entry
   historyCache.set(cacheKey, {
-    data,
+    data: clientData,
     lat,
     lng,
     timeRange,
     timestamp: Date.now(),
   });
 
-  return data;
+  return clientData;
 }
 
 /**

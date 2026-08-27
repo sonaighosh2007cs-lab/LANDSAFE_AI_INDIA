@@ -7,6 +7,7 @@ import {
   Sparkles,
   Layers,
   Thermometer,
+  RotateCcw,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { WeatherData } from '../types/weather';
@@ -22,13 +23,14 @@ import { LandSafeRiskImpactCard } from '../components/weather/LandSafeRiskImpact
 import { LocationQuickSelectorModal } from '../components/weather/LocationQuickSelectorModal';
 import { UserLocation } from '../types';
 import { fetchValidatedWeather } from '../services/locationDataService';
+import { classifyWeatherError } from '../services/weatherClient';
 
 export const LiveWeatherPage: React.FC = () => {
   const { userProfile, setUserLocation, changeUserLocation } = useApp();
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{ userMessage: string; technicalDetail: string } | null>(null);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState<boolean>(false);
 
   // Unit toggle state with local persistence
@@ -62,7 +64,7 @@ export const LiveWeatherPage: React.FC = () => {
         setWeatherData(null);
       }
 
-      setError(null);
+      setErrorInfo(null);
 
       // Cancel any ongoing fetch to avoid race conditions
       if (abortControllerRef.current) {
@@ -82,8 +84,8 @@ export const LiveWeatherPage: React.FC = () => {
         }
       } catch (err: any) {
         if (err.name !== 'AbortError') {
-          console.error('Error fetching live weather telemetry:', err);
-          setError(err.message || 'Failed to load meteorological data');
+          console.error('Weather telemetry notification:', err);
+          setErrorInfo(classifyWeatherError(err));
         }
       } finally {
         setIsLoading(false);
@@ -145,16 +147,20 @@ export const LiveWeatherPage: React.FC = () => {
       </div>
 
       {/* Error state */}
-      {error && !weatherData && (
-        <div className="bg-rose-950/40 border border-rose-800/80 rounded-2xl p-6 text-center space-y-3">
+      {errorInfo && !weatherData && (
+        <div className="bg-rose-950/40 border border-rose-800/80 rounded-2xl p-6 text-center space-y-3 shadow-lg" id="weather-error-card">
           <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
-          <h3 className="text-base font-bold text-white">Meteorological Telemetry Error</h3>
-          <p className="text-xs text-slate-300 max-w-md mx-auto">{error}</p>
+          <h3 className="text-base font-bold text-white">{errorInfo.userMessage}</h3>
+          <p className="text-xs text-slate-300 max-w-md mx-auto">
+            {errorInfo.technicalDetail}
+          </p>
           <button
             onClick={() => fetchWeather(true)}
-            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-md"
+            id="weather-retry-btn"
           >
-            Retry Connection
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Retry Telemetry Fetch</span>
           </button>
         </div>
       )}
