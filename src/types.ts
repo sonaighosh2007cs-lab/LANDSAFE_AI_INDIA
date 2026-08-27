@@ -151,6 +151,7 @@ export type DisasterCategory =
 
 export type DisasterSeverity = 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
 export type NewsStatusBadge = 'LIVE' | 'BREAKING' | 'UPDATED' | 'ONGOING';
+export type DisasterNewsTimeframe = 'all' | '30days' | 'today' | 'my-location';
 
 export interface VerifiedDisasterNewsItem {
   id: string;
@@ -159,7 +160,7 @@ export interface VerifiedDisasterNewsItem {
   source: string;
   sourceUrl: string;
   imageUrl?: string;
-  publishedAt: string;
+  publishedAt: string; // ISO 8601
   formattedDate: string;
   location: {
     state?: string;
@@ -176,7 +177,7 @@ export interface VerifiedDisasterNewsItem {
 }
 
 export interface DisasterNewsResponse {
-  timeframe: 'today' | '30days' | 'my-location';
+  timeframe: DisasterNewsTimeframe;
   totalResults: number;
   lastUpdated: string;
   locationScope: {
@@ -187,6 +188,7 @@ export interface DisasterNewsResponse {
     fallbackLevel?: 'district' | 'state' | 'national' | null;
   };
   articles: VerifiedDisasterNewsItem[];
+  error?: string;
 }
 
 export interface DisasterNewsItem {

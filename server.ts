@@ -7,7 +7,7 @@ import { fetchCompleteWeatherData } from "./server/weatherService";
 import { fetchLiveAqiData } from "./server/aqiService";
 import { getHistoricalTelemetry, HistoryTimeRange } from "./server/historyService";
 import { registerUser, loginUser, resetPassword } from "./server/authService";
-import { getIndianDisasterNews, DisasterCategory } from "./server/disasterNewsService";
+import { getIndianDisasterNews, DisasterCategory, DisasterNewsTimeframe } from "./server/disasterNewsService";
 import { processChatRequest } from "./server/aiAssistantEngine";
 
 dotenv.config();
@@ -89,13 +89,13 @@ app.post("/api/auth/forgot-password", (req, res) => {
 // Real-Time & Location-Aware Indian Natural Disaster News Endpoint
 app.get("/api/news/disaster", async (req, res) => {
   try {
-    const timeframe = (req.query.timeframe as 'today' | '30days' | 'my-location') || 'today';
+    const timeframe = (req.query.timeframe as DisasterNewsTimeframe) || "all";
     const state = req.query.state ? (req.query.state as string) : undefined;
     const district = req.query.district ? (req.query.district as string) : undefined;
     const area = req.query.area ? (req.query.area as string) : undefined;
-    const disasterType = (req.query.disasterType as DisasterCategory) || 'All';
-    const searchQuery = (req.query.search as string) || '';
-    const forceRefresh = req.query.refresh === 'true';
+    const disasterType = (req.query.disasterType as DisasterCategory) || "All";
+    const searchQuery = (req.query.search as string) || "";
+    const forceRefresh = req.query.refresh === "true";
 
     const newsData = await getIndianDisasterNews({
       timeframe,
@@ -107,12 +107,12 @@ app.get("/api/news/disaster", async (req, res) => {
       forceRefresh,
     });
 
-    res.setHeader("Cache-Control", "public, max-age=180");
+    res.setHeader("Cache-Control", "public, max-age=120");
     return res.json(newsData);
   } catch (error: any) {
     console.error("Disaster news fetch error:", error);
     return res.status(500).json({
-      error: "Unable to load disaster news",
+      error: "Live news is temporarily unavailable. Please try again shortly.",
       message: error.message || String(error),
       articles: [],
     });

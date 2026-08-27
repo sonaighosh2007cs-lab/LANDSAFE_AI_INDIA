@@ -6,15 +6,14 @@ import {
   MapPin,
   RefreshCw,
   Search,
-  CheckCircle,
-  ExternalLink,
-  ShieldAlert,
-  Compass,
   ArrowRight,
-  TrendingUp,
+  ShieldAlert,
+  Globe,
+  Calendar,
+  Clock,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { DisasterCategory, VerifiedDisasterNewsItem, DisasterNewsResponse } from '../types';
+import { DisasterCategory, VerifiedDisasterNewsItem, DisasterNewsResponse, DisasterNewsTimeframe } from '../types';
 import { fetchDisasterNews } from '../services/disasterNewsClient';
 import { DisasterNewsCard } from '../components/news/DisasterNewsCard';
 import { DisasterNewsModal } from '../components/news/DisasterNewsModal';
@@ -24,8 +23,8 @@ export const DisasterNewsPage: React.FC = () => {
   const { userProfile, setIsLocationModalOpen } = useApp();
   const location = userProfile.location;
 
-  // Active view filters
-  const [timeframe, setTimeframe] = useState<'today' | '30days' | 'my-location'>('today');
+  // Active view filters (default 'all' to show comprehensive all-India news)
+  const [timeframe, setTimeframe] = useState<DisasterNewsTimeframe>('all');
   const [disasterType, setDisasterType] = useState<DisasterCategory>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -75,18 +74,23 @@ export const DisasterNewsPage: React.FC = () => {
           signal: controller.signal,
         });
 
-        setArticles(response.articles || []);
-        setLocationScope(response.locationScope || {});
+        if (response.error && (!response.articles || response.articles.length === 0)) {
+          setError(response.error);
+        } else {
+          setArticles(response.articles || []);
+          setLocationScope(response.locationScope || {});
+          setError(null);
+        }
         setLastUpdated(new Date());
         setIsLoading(false);
         setIsRefreshing(false);
       } catch (err: any) {
         if (err.name === 'AbortError') {
-          // Request was intentionally aborted for a newer query; do nothing
+          // Request was intentionally aborted for a newer query
           return;
         }
         console.error('Error loading disaster news:', err);
-        setError('Unable to load the latest disaster news. Please check your network and retry.');
+        setError('Live news is temporarily unavailable. Please try again shortly.');
         setIsLoading(false);
         setIsRefreshing(false);
       }
@@ -106,11 +110,11 @@ export const DisasterNewsPage: React.FC = () => {
     };
   }, [loadNews]);
 
-  // Periodic auto-refresh every 3.5 minutes
+  // Periodic auto-refresh every 3 minutes
   useEffect(() => {
     const refreshInterval = setInterval(() => {
       loadNews(true);
-    }, 210000);
+    }, 180000);
 
     return () => clearInterval(refreshInterval);
   }, [loadNews]);
@@ -145,6 +149,34 @@ export const DisasterNewsPage: React.FC = () => {
   // Visible sliced articles for pagination
   const visibleArticles = articles.slice(0, visibleCount);
 
+  // Dynamic empty state message based on user requirements
+  const getEmptyStateMessage = () => {
+    if (timeframe === 'today') {
+      return {
+        title: 'No major India natural-disaster news reported today.',
+        subtitle: 'The system scanned live national meteorological and disaster monitoring agencies (IMD, NDMA, State Disaster Management Authorities). No catastrophic or severe alerts were published today.',
+      };
+    }
+    if (timeframe === '30days') {
+      return {
+        title: 'No disaster news reported in India over the past 30 days.',
+        subtitle: 'No disaster articles matching the active category filters were recorded during the previous 30-day window.',
+      };
+    }
+    if (timeframe === 'my-location') {
+      return {
+        title: `No local disaster bulletins found for ${location.area || location.district}, ${location.state}.`,
+        subtitle: 'Local area stations and regional SDRF units report nominal conditions without major disruption.',
+      };
+    }
+    return {
+      title: 'No natural disaster reports found matching the selected criteria.',
+      subtitle: 'Try clearing your search query or choosing a broader category to explore all available verified Indian disaster reports.',
+    };
+  };
+
+  const emptyInfo = getEmptyStateMessage();
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-16">
       {/* 1. Header Banner */}
@@ -157,7 +189,7 @@ export const DisasterNewsPage: React.FC = () => {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-            Real-time verified incident intelligence across Indian states from IMD, GSI, NDMA, and major publications.
+            Real-time verified incident intelligence across Indian states from IMD, GSI, NDMA, and leading publications.
           </p>
         </div>
 
@@ -174,10 +206,16 @@ export const DisasterNewsPage: React.FC = () => {
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 text-xs font-bold text-[#00d492]">
             <Sparkles className="w-4 h-4 text-[#00d492]" />
-            <span>LandSafe AI Geotechnical & Disaster Synthesis (Current Status)</span>
+            <span>LandSafe AI Incident Intelligence Summary</span>
           </div>
           <span className="text-[10px] font-mono text-slate-400 bg-[#06101c] px-2 py-0.5 rounded border border-[#152a42]">
-            {timeframe === 'today' ? 'TODAY FOCUS' : timeframe === '30days' ? '30-DAY ARCHIVE' : 'LOCATION SYNC'}
+            {timeframe === 'all'
+              ? 'ALL INDIA'
+              : timeframe === 'today'
+              ? 'TODAY FOCUS'
+              : timeframe === '30days'
+              ? '30-DAY ARCHIVE'
+              : 'LOCATION SYNC'}
           </span>
         </div>
 
@@ -189,6 +227,10 @@ export const DisasterNewsPage: React.FC = () => {
                 {location.area}, {location.district} ({location.state})
               </strong>
               . Slope pore-saturation index and upstream catchment rainfall data are being correlated with state emergency SDRF units and local district disaster control rooms.
+            </>
+          ) : timeframe === 'today' ? (
+            <>
+              Displaying exclusively verified natural disaster reports published <strong className="text-white">today in India</strong>. Information is aggregated live from IMD Doppler networks, NDMA national operations, CWC river gauge feeds, and regional emergency services.
             </>
           ) : (
             <>
@@ -217,14 +259,16 @@ export const DisasterNewsPage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-slate-400">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-slate-300">
-            Showing {articles.length} {articles.length === 1 ? 'report' : 'reports'}
+            Showing {articles.length} {articles.length === 1 ? 'verified report' : 'verified reports'}
           </span>
           <span className="text-slate-600">•</span>
           <span className="text-slate-400 font-mono">
-            {timeframe === 'today'
+            {timeframe === 'all'
+              ? 'All-India Disaster & Weather Feed'
+              : timeframe === 'today'
               ? "Today's Verified Events"
               : timeframe === '30days'
-              ? 'Past 30 Days India Archive'
+              ? 'Past 30 Days Rolling India Archive'
               : `Disaster Updates for ${location.area || location.district}, ${location.state}`}
           </span>
           {disasterType !== 'All' && (
@@ -257,7 +301,7 @@ export const DisasterNewsPage: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#081525] border border-[#17304d] text-xs text-[#00d492] font-mono animate-pulse">
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
               <span>
-                Finding disaster news for {timeframe === 'my-location' ? `${location.district}, ${location.state}` : 'India'}...
+                Retrieving real-time disaster news across {timeframe === 'my-location' ? `${location.district}, ${location.state}` : 'India'}...
               </span>
             </div>
           </div>
@@ -290,26 +334,29 @@ export const DisasterNewsPage: React.FC = () => {
           <div className="w-10 h-10 rounded-full bg-rose-950/80 border border-rose-800 flex items-center justify-center mx-auto text-rose-400">
             <AlertTriangle className="w-5 h-5" />
           </div>
-          <h3 className="text-base font-bold text-white">Unable to Load Disaster News</h3>
-          <p className="text-xs text-slate-300 max-w-md mx-auto">{error}</p>
+          <h3 className="text-base font-bold text-white">Live news is temporarily unavailable. Please try again shortly.</h3>
+          <p className="text-xs text-slate-300 max-w-md mx-auto">
+            The national news telemetry pipeline could not establish a connection to the live data stream.
+          </p>
           <button
             onClick={() => loadNews(true)}
-            className="px-4 py-2 bg-[#009e60] hover:bg-[#00b870] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+            className="px-4 py-2 bg-[#009e60] hover:bg-[#00b870] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer inline-flex items-center gap-1.5"
           >
-            Retry News Feed
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Connection</span>
           </button>
         </div>
       ) : articles.length === 0 ? (
-        <div className="bg-[#091626] border border-[#182f4d] rounded-2xl p-12 text-center space-y-4 shadow-xl">
+        <div className="bg-[#091626] border border-[#182f4d] rounded-2xl p-10 text-center space-y-4 shadow-xl">
           <div className="w-12 h-12 rounded-2xl bg-[#0c1e33] border border-[#183454] flex items-center justify-center mx-auto text-slate-400">
             <Search className="w-6 h-6" />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <h3 className="text-base font-bold text-white">
-              No recent disaster news found for this selection
+              {emptyInfo.title}
             </h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              No verified natural hazard reports were found matching your current filter. You can broaden the timeframe, reset category filters, or explore all-India reports.
+            <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
+              {emptyInfo.subtitle}
             </p>
           </div>
           <div className="flex items-center justify-center gap-2.5 pt-2 flex-wrap">
@@ -321,12 +368,13 @@ export const DisasterNewsPage: React.FC = () => {
                 Clear Category Filter
               </button>
             )}
-            {timeframe === 'my-location' && (
+            {timeframe !== 'all' && (
               <button
-                onClick={() => setTimeframe('today')}
-                className="px-3.5 py-1.5 rounded-xl bg-[#009e60] text-white text-xs font-bold hover:bg-[#00b870] cursor-pointer"
+                onClick={() => setTimeframe('all')}
+                className="px-3.5 py-1.5 rounded-xl bg-[#009e60] text-white text-xs font-bold hover:bg-[#00b870] cursor-pointer inline-flex items-center gap-1.5"
               >
-                View Today's India News
+                <Globe className="w-3.5 h-3.5" />
+                <span>View All India News</span>
               </button>
             )}
             <button

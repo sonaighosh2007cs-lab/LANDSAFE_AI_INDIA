@@ -1,20 +1,17 @@
 import React from 'react';
 import {
+  Globe,
   Calendar,
   Clock,
   MapPin,
   Search,
   RotateCw,
-  Filter,
-  Sparkles,
-  SlidersHorizontal,
-  ChevronDown,
 } from 'lucide-react';
-import { DisasterCategory, UserLocation } from '../../types';
+import { DisasterCategory, DisasterNewsTimeframe, UserLocation } from '../../types';
 
 interface DisasterNewsFiltersProps {
-  timeframe: 'today' | '30days' | 'my-location';
-  setTimeframe: (tf: 'today' | '30days' | 'my-location') => void;
+  timeframe: DisasterNewsTimeframe;
+  setTimeframe: (tf: DisasterNewsTimeframe) => void;
   disasterType: DisasterCategory;
   setDisasterType: (type: DisasterCategory) => void;
   searchQuery: string;
@@ -68,22 +65,19 @@ export const DisasterNewsFilters: React.FC<DisasterNewsFiltersProps> = ({
     <div className="space-y-4">
       {/* 1. Primary Timeframe Switcher Tabs + Location Info Bar */}
       <div className="bg-[#081322] border border-[#162d47] rounded-2xl p-3 sm:p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 shadow-xl">
-        {/* Three Main Tabs */}
-        <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#050c16] rounded-xl border border-[#13273e]">
-          {/* TODAY Tab */}
+        {/* Four Main Tabs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-[#050c16] rounded-xl border border-[#13273e]">
+          {/* ALL Tab */}
           <button
-            onClick={() => setTimeframe('today')}
+            onClick={() => setTimeframe('all')}
             className={`py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              timeframe === 'today'
+              timeframe === 'all'
                 ? 'bg-[#009e60] text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-[#0c1f35]'
             }`}
           >
-            <Clock className="w-4 h-4 shrink-0" />
-            <span>TODAY</span>
-            <span className="hidden sm:inline text-[10px] font-mono opacity-80">
-              ({todayFormatted})
-            </span>
+            <Globe className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span>ALL INDIA</span>
           </button>
 
           {/* LAST 30 DAYS Tab */}
@@ -95,8 +89,24 @@ export const DisasterNewsFilters: React.FC<DisasterNewsFiltersProps> = ({
                 : 'text-slate-400 hover:text-slate-200 hover:bg-[#0c1f35]'
             }`}
           >
-            <Calendar className="w-4 h-4 shrink-0" />
+            <Calendar className="w-4 h-4 shrink-0 text-blue-400" />
             <span>LAST 30 DAYS</span>
+          </button>
+
+          {/* TODAY Tab */}
+          <button
+            onClick={() => setTimeframe('today')}
+            className={`py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              timeframe === 'today'
+                ? 'bg-[#009e60] text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#0c1f35]'
+            }`}
+          >
+            <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span>TODAY</span>
+            <span className="hidden md:inline text-[10px] font-mono opacity-80">
+              ({todayFormatted})
+            </span>
           </button>
 
           {/* MY LOCATION Tab */}
@@ -157,7 +167,7 @@ export const DisasterNewsFilters: React.FC<DisasterNewsFiltersProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search disaster news by keyword, river basin, highway, or district..."
-              className="w-full bg-[#050c16] border border-[#18314e] focus:border-[#00d492] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 outline-none transition-all"
+              className="w-full bg-[#050c16] border border-[#18314e] focus:border-[#00d492] rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-all"
             />
             {searchQuery && (
               <button
@@ -170,7 +180,7 @@ export const DisasterNewsFilters: React.FC<DisasterNewsFiltersProps> = ({
           </div>
 
           <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono self-end md:self-auto">
-            <span>Last updated: <strong>{lastUpdatedTime}</strong></span>
+            <span>Last updated: <strong className="text-slate-200">{lastUpdatedTime}</strong></span>
           </div>
         </div>
 

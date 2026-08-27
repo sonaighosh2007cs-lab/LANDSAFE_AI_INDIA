@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getIndianDisasterNews, DisasterCategory } from '../../server/disasterNewsService';
+import { getIndianDisasterNews, DisasterCategory, DisasterNewsTimeframe } from '../../server/disasterNewsService';
 
 export default async function handler(
   req: IncomingMessage & { url?: string },
@@ -18,7 +18,7 @@ export default async function handler(
 
   try {
     const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
-    const timeframe = (url.searchParams.get('timeframe') as 'today' | '30days' | 'my-location') || 'today';
+    const timeframe = (url.searchParams.get('timeframe') as DisasterNewsTimeframe) || 'all';
     const state = url.searchParams.get('state') || undefined;
     const district = url.searchParams.get('district') || undefined;
     const area = url.searchParams.get('area') || undefined;
@@ -38,7 +38,7 @@ export default async function handler(
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 'public, max-age=180');
+    res.setHeader('Cache-Control', 'public, max-age=120');
     res.end(JSON.stringify(newsData));
   } catch (error: any) {
     console.error('Vercel API error in news/disaster:', error);
@@ -46,7 +46,7 @@ export default async function handler(
     res.setHeader('Content-Type', 'application/json');
     res.end(
       JSON.stringify({
-        error: error.message || 'Failed to fetch disaster news',
+        error: 'Live news is temporarily unavailable. Please try again shortly.',
         articles: [],
       })
     );

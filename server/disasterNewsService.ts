@@ -1,5 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-
 export type DisasterCategory =
   | 'All'
   | 'Flood'
@@ -19,6 +17,7 @@ export type DisasterCategory =
 
 export type DisasterSeverity = 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
 export type NewsStatusBadge = 'LIVE' | 'BREAKING' | 'UPDATED' | 'ONGOING';
+export type DisasterNewsTimeframe = 'all' | '30days' | 'today' | 'my-location';
 
 export interface VerifiedDisasterNewsItem {
   id: string;
@@ -44,7 +43,7 @@ export interface VerifiedDisasterNewsItem {
 }
 
 export interface DisasterNewsResponse {
-  timeframe: 'today' | '30days' | 'my-location';
+  timeframe: DisasterNewsTimeframe;
   totalResults: number;
   lastUpdated: string;
   locationScope: {
@@ -55,108 +54,365 @@ export interface DisasterNewsResponse {
     fallbackLevel?: 'district' | 'state' | 'national' | null;
   };
   articles: VerifiedDisasterNewsItem[];
+  error?: string;
 }
 
-// In-Memory Cache
+// In-Memory Cache for fast response & rate protection
 interface CacheEntry {
   timestamp: number;
   data: DisasterNewsResponse;
 }
 
 const NEWS_CACHE = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
+const CACHE_TTL_MS = 2.5 * 60 * 1000; // 2.5 minutes cache
 
-/**
- * Natural disaster keywords for India
- */
+// Comprehensive Indian States and Union Territories
+const INDIAN_STATES_AND_UTS: string[] = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar',
+  'Chandigarh',
+  'Dadra and Nagar Haveli',
+  'Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+];
+
+// Major Indian Disaster-Prone Districts, Cities & Regions mapping to their state
+const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> = {
+  wayanad: { state: 'Kerala', district: 'Wayanad' },
+  idukki: { state: 'Kerala', district: 'Idukki' },
+  munnar: { state: 'Kerala', district: 'Idukki' },
+  kozhikode: { state: 'Kerala', district: 'Kozhikode' },
+  malappuram: { state: 'Kerala', district: 'Malappuram' },
+  palakkad: { state: 'Kerala', district: 'Palakkad' },
+  thrissur: { state: 'Kerala', district: 'Thrissur' },
+  ernakulam: { state: 'Kerala', district: 'Ernakulam' },
+  kottayam: { state: 'Kerala', district: 'Kottayam' },
+  alappuzha: { state: 'Kerala', district: 'Alappuzha' },
+  pathanamthitta: { state: 'Kerala', district: 'Pathanamthitta' },
+  kannur: { state: 'Kerala', district: 'Kannur' },
+  kasaragod: { state: 'Kerala', district: 'Kasaragod' },
+  thiruvananthapuram: { state: 'Kerala', district: 'Thiruvananthapuram' },
+  shimla: { state: 'Himachal Pradesh', district: 'Shimla' },
+  manali: { state: 'Himachal Pradesh', district: 'Kullu' },
+  kullu: { state: 'Himachal Pradesh', district: 'Kullu' },
+  mandi: { state: 'Himachal Pradesh', district: 'Mandi' },
+  dharamshala: { state: 'Himachal Pradesh', district: 'Kangra' },
+  kangra: { state: 'Himachal Pradesh', district: 'Kangra' },
+  chamba: { state: 'Himachal Pradesh', district: 'Chamba' },
+  kinnaur: { state: 'Himachal Pradesh', district: 'Kinnaur' },
+  lahaul: { state: 'Himachal Pradesh', district: 'Lahaul and Spiti' },
+  spiti: { state: 'Himachal Pradesh', district: 'Lahaul and Spiti' },
+  solan: { state: 'Himachal Pradesh', district: 'Solan' },
+  sirmaur: { state: 'Himachal Pradesh', district: 'Sirmaur' },
+  bilaspur: { state: 'Himachal Pradesh', district: 'Bilaspur' },
+  dehradun: { state: 'Uttarakhand', district: 'Dehradun' },
+  rishikesh: { state: 'Uttarakhand', district: 'Dehradun' },
+  haridwar: { state: 'Uttarakhand', district: 'Haridwar' },
+  chamoli: { state: 'Uttarakhand', district: 'Chamoli' },
+  joshimath: { state: 'Uttarakhand', district: 'Chamoli' },
+  kedarnath: { state: 'Uttarakhand', district: 'Rudraprayag' },
+  badrinath: { state: 'Uttarakhand', district: 'Chamoli' },
+  uttarkashi: { state: 'Uttarakhand', district: 'Uttarkashi' },
+  rudraprayag: { state: 'Uttarakhand', district: 'Rudraprayag' },
+  tehri: { state: 'Uttarakhand', district: 'Tehri Garhwal' },
+  nainital: { state: 'Uttarakhand', district: 'Nainital' },
+  almora: { state: 'Uttarakhand', district: 'Almora' },
+  pithoragarh: { state: 'Uttarakhand', district: 'Pithoragarh' },
+  bageshwar: { state: 'Uttarakhand', district: 'Bageshwar' },
+  champawat: { state: 'Uttarakhand', district: 'Champawat' },
+  darjeeling: { state: 'West Bengal', district: 'Darjeeling' },
+  kalimpong: { state: 'West Bengal', district: 'Kalimpong' },
+  kurseong: { state: 'West Bengal', district: 'Darjeeling' },
+  siliguri: { state: 'West Bengal', district: 'Darjeeling' },
+  jalpaiguri: { state: 'West Bengal', district: 'Jalpaiguri' },
+  alipurduar: { state: 'West Bengal', district: 'Alipurduar' },
+  'cooch behar': { state: 'West Bengal', district: 'Cooch Behar' },
+  kolkata: { state: 'West Bengal', district: 'Kolkata' },
+  howrah: { state: 'West Bengal', district: 'Howrah' },
+  malda: { state: 'West Bengal', district: 'Malda' },
+  murshidabad: { state: 'West Bengal', district: 'Murshidabad' },
+  sunderbans: { state: 'West Bengal' },
+  digha: { state: 'West Bengal', district: 'Purba Medinipur' },
+  gangtok: { state: 'Sikkim', district: 'East Sikkim' },
+  mangan: { state: 'Sikkim', district: 'North Sikkim' },
+  namchi: { state: 'Sikkim', district: 'South Sikkim' },
+  gyalshing: { state: 'Sikkim', district: 'West Sikkim' },
+  chungthang: { state: 'Sikkim', district: 'North Sikkim' },
+  guwahati: { state: 'Assam', district: 'Kamrup Metropolitan' },
+  dibrugarh: { state: 'Assam', district: 'Dibrugarh' },
+  silchar: { state: 'Assam', district: 'Cachar' },
+  cachar: { state: 'Assam', district: 'Cachar' },
+  karimganj: { state: 'Assam', district: 'Karimganj' },
+  hailakandi: { state: 'Assam', district: 'Hailakandi' },
+  jorhat: { state: 'Assam', district: 'Jorhat' },
+  nagaon: { state: 'Assam', district: 'Nagaon' },
+  barpeta: { state: 'Assam', district: 'Barpeta' },
+  dhubri: { state: 'Assam', district: 'Dhubri' },
+  golaghat: { state: 'Assam', district: 'Golaghat' },
+  sonitpur: { state: 'Assam', district: 'Sonitpur' },
+  dhemaji: { state: 'Assam', district: 'Dhemaji' },
+  lakhimpur: { state: 'Assam', district: 'Lakhimpur' },
+  kaziranga: { state: 'Assam', district: 'Golaghat' },
+  majuli: { state: 'Assam', district: 'Majuli' },
+  morigaon: { state: 'Assam', district: 'Morigaon' },
+  brahmaputra: { state: 'Assam' },
+  teesta: { state: 'West Bengal' },
+  mumbai: { state: 'Maharashtra', district: 'Mumbai' },
+  pune: { state: 'Maharashtra', district: 'Pune' },
+  thane: { state: 'Maharashtra', district: 'Thane' },
+  raigad: { state: 'Maharashtra', district: 'Raigad' },
+  ratnagiri: { state: 'Maharashtra', district: 'Ratnagiri' },
+  sindhudurg: { state: 'Maharashtra', district: 'Sindhudurg' },
+  kolhapur: { state: 'Maharashtra', district: 'Kolhapur' },
+  satara: { state: 'Maharashtra', district: 'Satara' },
+  nashik: { state: 'Maharashtra', district: 'Nashik' },
+  konkan: { state: 'Maharashtra' },
+  mahabaleshwar: { state: 'Maharashtra', district: 'Satara' },
+  puri: { state: 'Odisha', district: 'Puri' },
+  cuttack: { state: 'Odisha', district: 'Cuttack' },
+  bhubaneswar: { state: 'Odisha', district: 'Khordha' },
+  balasore: { state: 'Odisha', district: 'Balasore' },
+  bhadrak: { state: 'Odisha', district: 'Bhadrak' },
+  ganjam: { state: 'Odisha', district: 'Ganjam' },
+  jagatsinghpur: { state: 'Odisha', district: 'Jagatsinghpur' },
+  kendrapara: { state: 'Odisha', district: 'Kendrapara' },
+  paradeep: { state: 'Odisha', district: 'Jagatsinghpur' },
+  chennai: { state: 'Tamil Nadu', district: 'Chennai' },
+  nilgiris: { state: 'Tamil Nadu', district: 'Nilgiris' },
+  ooty: { state: 'Tamil Nadu', district: 'Nilgiris' },
+  kodaikanal: { state: 'Tamil Nadu', district: 'Dindigul' },
+  coimbatore: { state: 'Tamil Nadu', district: 'Coimbatore' },
+  cuddalore: { state: 'Tamil Nadu', district: 'Cuddalore' },
+  nagapattinam: { state: 'Tamil Nadu', district: 'Nagapattinam' },
+  patna: { state: 'Bihar', district: 'Patna' },
+  bhagalpur: { state: 'Bihar', district: 'Bhagalpur' },
+  katihar: { state: 'Bihar', district: 'Katihar' },
+  purnia: { state: 'Bihar', district: 'Purnia' },
+  araria: { state: 'Bihar', district: 'Araria' },
+  kishanganj: { state: 'Bihar', district: 'Kishanganj' },
+  supaul: { state: 'Bihar', district: 'Supaul' },
+  madhepura: { state: 'Bihar', district: 'Madhepura' },
+  saharsa: { state: 'Bihar', district: 'Saharsa' },
+  muzaffarpur: { state: 'Bihar', district: 'Muzaffarpur' },
+  darbhanga: { state: 'Bihar', district: 'Darbhanga' },
+  samastipur: { state: 'Bihar', district: 'Samastipur' },
+  srinagar: { state: 'Jammu and Kashmir', district: 'Srinagar' },
+  jammu: { state: 'Jammu and Kashmir', district: 'Jammu' },
+  anantnag: { state: 'Jammu and Kashmir', district: 'Anantnag' },
+  baramulla: { state: 'Jammu and Kashmir', district: 'Baramulla' },
+  kupwara: { state: 'Jammu and Kashmir', district: 'Kupwara' },
+  doda: { state: 'Jammu and Kashmir', district: 'Doda' },
+  kishtwar: { state: 'Jammu and Kashmir', district: 'Kishtwar' },
+  ramban: { state: 'Jammu and Kashmir', district: 'Ramban' },
+  reasi: { state: 'Jammu and Kashmir', district: 'Reasi' },
+  leh: { state: 'Ladakh', district: 'Leh' },
+  kargil: { state: 'Ladakh', district: 'Kargil' },
+  visakhapatnam: { state: 'Andhra Pradesh', district: 'Visakhapatnam' },
+  vijayawada: { state: 'Andhra Pradesh', district: 'NTR' },
+  kakinada: { state: 'Andhra Pradesh', district: 'Kakinada' },
+  tirupati: { state: 'Andhra Pradesh', district: 'Tirupati' },
+  bengaluru: { state: 'Karnataka', district: 'Bengaluru Urban' },
+  mangalore: { state: 'Karnataka', district: 'Dakshina Kannada' },
+  udupi: { state: 'Karnataka', district: 'Udupi' },
+  karwar: { state: 'Karnataka', district: 'Uttara Kannada' },
+  coorg: { state: 'Karnataka', district: 'Kodagu' },
+  kodagu: { state: 'Karnataka', district: 'Kodagu' },
+  chikkamagaluru: { state: 'Karnataka', district: 'Chikkamagaluru' },
+  shivamogga: { state: 'Karnataka', district: 'Shivamogga' },
+  ahmedabad: { state: 'Gujarat', district: 'Ahmedabad' },
+  surat: { state: 'Gujarat', district: 'Surat' },
+  vadodara: { state: 'Gujarat', district: 'Vadodara' },
+  rajkot: { state: 'Gujarat', district: 'Rajkot' },
+  kutch: { state: 'Gujarat', district: 'Kutch' },
+  bhuj: { state: 'Gujarat', district: 'Kutch' },
+  saurashtra: { state: 'Gujarat' },
+  jaipur: { state: 'Rajasthan', district: 'Jaipur' },
+  jodhpur: { state: 'Rajasthan', district: 'Jodhpur' },
+  udaipur: { state: 'Rajasthan', district: 'Udaipur' },
+  kota: { state: 'Rajasthan', district: 'Kota' },
+  lucknow: { state: 'Uttar Pradesh', district: 'Lucknow' },
+  varanasi: { state: 'Uttar Pradesh', district: 'Varanasi' },
+  prayagraj: { state: 'Uttar Pradesh', district: 'Prayagraj' },
+  gorakhpur: { state: 'Uttar Pradesh', district: 'Gorakhpur' },
+  ayodhya: { state: 'Uttar Pradesh', district: 'Ayodhya' },
+  itanagar: { state: 'Arunachal Pradesh', district: 'Papum Pare' },
+  tawang: { state: 'Arunachal Pradesh', district: 'Tawang' },
+  shillong: { state: 'Meghalaya', district: 'East Khasi Hills' },
+  cherrapunji: { state: 'Meghalaya', district: 'East Khasi Hills' },
+  mawsynram: { state: 'Meghalaya', district: 'East Khasi Hills' },
+  imphal: { state: 'Manipur', district: 'Imphal West' },
+  aizawl: { state: 'Mizoram', district: 'Aizawl' },
+  kohima: { state: 'Nagaland', district: 'Kohima' },
+  agartala: { state: 'Tripura', district: 'West Tripura' },
+  bhopal: { state: 'Madhya Pradesh', district: 'Bhopal' },
+  indore: { state: 'Madhya Pradesh', district: 'Indore' },
+  jabalpur: { state: 'Madhya Pradesh', district: 'Jabalpur' },
+  raipur: { state: 'Chhattisgarh', district: 'Raipur' },
+  ranchi: { state: 'Jharkhand', district: 'Ranchi' },
+  jamshedpur: { state: 'Jharkhand', district: 'East Singhbhum' },
+};
+
+// Pure Foreign Exclusions (unless directly impacting India)
+const FOREIGN_ENTITIES = [
+  'kathmandu',
+  'pokhara',
+  'nepal army',
+  'dhaka',
+  'chittagong',
+  'bangladesh government',
+  'islamabad',
+  'karachi',
+  'lahore',
+  'colombo',
+  'sri lanka navy',
+  'yangon',
+  'myanmar military',
+  'beijing',
+  'tibet border post',
+  'florida',
+  'texas',
+  'california',
+  'tokyo',
+  'philippines storm',
+  'indonesia volcano',
+];
+
 const DISASTER_KEYWORDS = [
   'flood',
   'flooding',
   'flash flood',
+  'inundat',
+  'submerged',
+  'waterlogg',
   'landslide',
   'mudslide',
+  'rockfall',
+  'slope collapse',
+  'slope failure',
   'land subsidence',
   'subsidence',
+  'sinking',
   'cloudburst',
   'cyclone',
+  'cyclonic',
+  'depression in bay',
   'storm',
   'thunderstorm',
   'heavy rain',
   'extremely heavy rain',
-  'rainfall',
+  'torrential rain',
+  'downpour',
   'monsoon surge',
+  'monsoon deluge',
+  'red alert',
+  'orange alert',
+  'yellow alert',
+  'flood alert',
   'earthquake',
   'tremor',
+  'seismic',
   'tsunami',
   'heatwave',
+  'heat wave',
   'wildfire',
   'forest fire',
   'avalanche',
+  'snow slide',
+  'glof',
+  'glacial burst',
   'lightning',
-  'inundation',
-  'waterlogging',
+  'thunderbolt',
   'dam overflow',
-  'red alert',
-  'orange alert',
-  'debris flow',
-  'slope collapse',
+  'dam gate',
+  'river water level',
+  'danger mark',
+  'ndrf',
+  'sdrf',
+  'disaster management',
+  'evacuation',
+  'relief camp',
 ];
 
-const NON_DISASTER_EXCLUDE = [
-  'movie',
-  'film',
-  'trailer',
+const EXCLUSION_KEYWORDS = [
   'box office',
-  'cricket',
-  'ipl',
-  'match score',
-  'politics',
-  'election',
-  'stock market',
-  'bse',
-  'nse',
-  'celebrity',
+  'trailer',
   'bollywood',
+  'tollywood',
+  'cricket match',
+  'ipl 202',
+  'stock market',
+  'sensex',
+  'nifty',
+  'election campaign',
+  'political rally',
+  'movie review',
+  'web series',
+  'celebrity wedding',
 ];
 
 /**
- * Helper to classify disaster type from title and snippet
+ * Classify disaster category from title and text
  */
 export function classifyDisasterType(text: string): DisasterCategory {
   const lower = text.toLowerCase();
 
-  if (lower.includes('landslide') || lower.includes('mudslide') || lower.includes('slope failure') || lower.includes('rockfall')) {
+  if (lower.includes('landslide') || lower.includes('mudslide') || lower.includes('rockfall') || lower.includes('slope collapse')) {
     return 'Landslide';
   }
-  if (lower.includes('land subsidence') || lower.includes('sinking') || lower.includes('joshimath') || lower.includes('ground crack')) {
+  if (lower.includes('land subsidence') || lower.includes('sinking') || lower.includes('ground crack')) {
     return 'Land Subsidence';
   }
   if (lower.includes('cloudburst')) {
     return 'Cloudburst';
   }
-  if (lower.includes('flash flood') || lower.includes('flash floods')) {
+  if (lower.includes('flash flood') || lower.includes('flash floods') || lower.includes('deluge')) {
     return 'Flood';
   }
-  if (lower.includes('flood') || lower.includes('inundat') || lower.includes('submerged') || lower.includes('waterlogg')) {
+  if (lower.includes('flood') || lower.includes('inundat') || lower.includes('submerged') || lower.includes('waterlogg') || lower.includes('dam overflow') || lower.includes('danger mark')) {
     return 'Flood';
   }
-  if (lower.includes('heavy rain') || lower.includes('torrential') || lower.includes('downpour') || lower.includes('red alert') || lower.includes('rainfall')) {
+  if (lower.includes('heavy rain') || lower.includes('torrential') || lower.includes('downpour') || lower.includes('rainfall') || lower.includes('monsoon surge')) {
     return 'Heavy Rain';
   }
-  if (lower.includes('cyclone') || lower.includes('cyclonic') || lower.includes('depression in bay of bengal') || lower.includes('arabian sea')) {
+  if (lower.includes('cyclone') || lower.includes('cyclonic') || lower.includes('deep depression') || lower.includes('bay of bengal depression')) {
     return 'Cyclone';
   }
-  if (lower.includes('earthquake') || lower.includes('tremor') || lower.includes('richter scale') || lower.includes('seismic') || lower.includes('epicenter')) {
+  if (lower.includes('earthquake') || lower.includes('tremor') || lower.includes('richter scale') || lower.includes('seismic')) {
     return 'Earthquake';
   }
-  if (lower.includes('tsunami') || lower.includes('tidal wave')) {
+  if (lower.includes('tsunami') || lower.includes('tidal surge')) {
     return 'Tsunami';
-  }
-  if (lower.includes('heatwave') || lower.includes('heat wave') || lower.includes('extreme heat') || lower.includes('temperatures soar')) {
-    return 'Heatwave';
-  }
-  if (lower.includes('wildfire') || lower.includes('forest fire') || lower.includes('jungle fire')) {
-    return 'Wildfire';
   }
   if (lower.includes('avalanche') || lower.includes('snow slide') || lower.includes('glof') || lower.includes('glacial burst')) {
     return 'Avalanche';
@@ -164,7 +420,13 @@ export function classifyDisasterType(text: string): DisasterCategory {
   if (lower.includes('lightning') || lower.includes('thunderbolt')) {
     return 'Lightning';
   }
-  if (lower.includes('storm') || lower.includes('thunderstorm') || lower.includes('squall') || lower.includes('gale') || lower.includes('hailstorm')) {
+  if (lower.includes('heatwave') || lower.includes('heat wave') || lower.includes('extreme heat')) {
+    return 'Heatwave';
+  }
+  if (lower.includes('wildfire') || lower.includes('forest fire') || lower.includes('jungle fire')) {
+    return 'Wildfire';
+  }
+  if (lower.includes('storm') || lower.includes('thunderstorm') || lower.includes('squall') || lower.includes('hailstorm')) {
     return 'Storm';
   }
 
@@ -172,7 +434,7 @@ export function classifyDisasterType(text: string): DisasterCategory {
 }
 
 /**
- * Determine severity assessment
+ * Assess disaster severity
  */
 export function assessSeverity(text: string, category: DisasterCategory): DisasterSeverity {
   const lower = text.toLowerCase();
@@ -185,7 +447,8 @@ export function assessSeverity(text: string, category: DisasterCategory): Disast
     lower.includes('killed') ||
     lower.includes('dead') ||
     lower.includes('high casualty') ||
-    lower.includes('ndrf deployed')
+    lower.includes('ndrf deployed') ||
+    lower.includes('submerged villages')
   ) {
     return 'CRITICAL';
   }
@@ -194,18 +457,17 @@ export function assessSeverity(text: string, category: DisasterCategory): Disast
     lower.includes('heavy damage') ||
     lower.includes('orange alert') ||
     lower.includes('blocked') ||
-    lower.includes('warning') ||
     lower.includes('stranded') ||
-    lower.includes('rescue operation')
+    lower.includes('rescue underway') ||
+    lower.includes('highway closed')
   ) {
     return 'HIGH';
   }
   if (
     lower.includes('moderate') ||
-    lower.includes('alert') ||
     lower.includes('yellow alert') ||
+    lower.includes('advisory') ||
     lower.includes('watch') ||
-    lower.includes('isolated') ||
     lower.includes('forecast')
   ) {
     return 'MODERATE';
@@ -214,7 +476,7 @@ export function assessSeverity(text: string, category: DisasterCategory): Disast
 }
 
 /**
- * Determine status badge (LIVE / BREAKING / UPDATED / ONGOING)
+ * Determine dynamic status badge
  */
 export function determineStatusBadge(pubDate: Date, text: string): NewsStatusBadge | undefined {
   const lower = text.toLowerCase();
@@ -224,48 +486,169 @@ export function determineStatusBadge(pubDate: Date, text: string): NewsStatusBad
   if (lower.includes('live') || lower.includes('live updates') || lower.includes('breaking')) {
     return 'LIVE';
   }
-  if (diffHours <= 3 && (lower.includes('urgent') || lower.includes('toll rises') || lower.includes('alert'))) {
+  if (diffHours <= 4 && (lower.includes('urgent') || lower.includes('alert') || lower.includes('red alert'))) {
     return 'BREAKING';
   }
-  if (lower.includes('ongoing') || lower.includes('rescue underway') || lower.includes('efforts continue')) {
+  if (lower.includes('ongoing') || lower.includes('rescue underway') || lower.includes('relief operations')) {
     return 'ONGOING';
   }
-  if (diffHours <= 12) {
+  if (diffHours <= 18) {
     return 'UPDATED';
   }
   return undefined;
 }
 
 /**
- * Format publication date cleanly (e.g., "27 Aug 2026 • 07:26 AM" or "Today, 06:15 AM")
+ * Check if an article was published today (IST or reference system date)
  */
-export function formatPubDate(date: Date): { formatted: string; isToday: boolean } {
-  const now = new Date();
-  const isToday =
-    date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear();
+export function isPublishedToday(pubDate: Date, referenceDate: Date = new Date()): boolean {
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const pubIst = new Date(pubDate.getTime() + IST_OFFSET_MS);
+  const refIst = new Date(referenceDate.getTime() + IST_OFFSET_MS);
 
-  const timeStr = date.toLocaleTimeString('en-IN', {
+  const sameCalendarDay =
+    pubIst.getUTCFullYear() === refIst.getUTCFullYear() &&
+    pubIst.getUTCMonth() === refIst.getUTCMonth() &&
+    pubIst.getUTCDate() === refIst.getUTCDate();
+
+  const diffHours = (referenceDate.getTime() - pubDate.getTime()) / (1000 * 60 * 60);
+
+  // Must be same calendar day in IST and within 26 hours
+  return sameCalendarDay && diffHours >= -1 && diffHours <= 26;
+}
+
+/**
+ * Format publication date dynamically
+ */
+export function formatPubDate(pubDate: Date, referenceDate: Date = new Date()): { formatted: string; isToday: boolean } {
+  const today = isPublishedToday(pubDate, referenceDate);
+
+  const timeStr = pubDate.toLocaleTimeString('en-IN', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
   });
 
-  const dateStr = date.toLocaleDateString('en-IN', {
+  const dateStr = pubDate.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
 
   return {
-    formatted: isToday ? `Today • ${timeStr}` : `${dateStr} • ${timeStr}`,
-    isToday,
+    formatted: today ? `Today • ${timeStr}` : `${dateStr} • ${timeStr}`,
+    isToday: today,
   };
 }
 
 /**
- * Parse Google News RSS XML response without external heavy XML dependencies
+ * Extract and strictly verify Indian location from text.
+ * Returns null if purely unrelated foreign event.
+ */
+export function extractIndiaLocation(
+  title: string,
+  desc: string
+): { state?: string; district?: string; area?: string; label: string } | null {
+  const combined = `${title} ${desc}`.toLowerCase();
+
+  // 1. Direct State / UT matching
+  for (const st of INDIAN_STATES_AND_UTS) {
+    if (combined.includes(st.toLowerCase())) {
+      return {
+        state: st,
+        label: `${st}, India`,
+      };
+    }
+  }
+
+  // 2. City / District / Regional mapping
+  for (const [key, mapping] of Object.entries(INDIAN_REGIONAL_MAP)) {
+    if (combined.includes(key)) {
+      const stateName = mapping.state;
+      const distName = mapping.district;
+      const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+      return {
+        state: stateName,
+        district: distName,
+        area: formattedKey,
+        label: distName ? `${formattedKey}, ${stateName}` : `${formattedKey} (${stateName}), India`,
+      };
+    }
+  }
+
+  // 3. Check for Indian government / agency involvement or cross-border impact on India
+  const hasIndiaKeyword =
+    combined.includes('india') ||
+    combined.includes('indian') ||
+    combined.includes('imd') ||
+    combined.includes('ndma') ||
+    combined.includes('ndrf') ||
+    combined.includes('sdrf') ||
+    combined.includes('gsi') ||
+    combined.includes('cwc') ||
+    combined.includes('bay of bengal') ||
+    combined.includes('arabian sea') ||
+    combined.includes('himalayan region') ||
+    combined.includes('western ghats');
+
+  // Check if pure foreign without Indian mention
+  const isPureForeign = FOREIGN_ENTITIES.some((f) => combined.includes(f));
+  if (isPureForeign && !hasIndiaKeyword) {
+    return null;
+  }
+
+  if (hasIndiaKeyword) {
+    if (combined.includes('himalaya') || combined.includes('western himalayas')) {
+      return { state: 'Himachal Pradesh', label: 'Western Himalayan Region, India' };
+    }
+    if (combined.includes('western ghats')) {
+      return { state: 'Kerala', label: 'Western Ghats, India' };
+    }
+    if (combined.includes('bay of bengal') || combined.includes('coastal')) {
+      return { state: 'Odisha', label: 'East Coast / Bay of Bengal, India' };
+    }
+    if (combined.includes('arabian sea')) {
+      return { state: 'Gujarat', label: 'West Coast / Arabian Sea, India' };
+    }
+    return { label: 'Across India' };
+  }
+
+  // If no Indian location found and no explicit India context, reject
+  return null;
+}
+
+/**
+ * Check if text is genuine natural disaster or extreme weather
+ */
+function isDisasterArticle(title: string, desc: string): boolean {
+  const combined = `${title} ${desc}`.toLowerCase();
+
+  // Exclude non-disaster topics
+  const hasExclusion = EXCLUSION_KEYWORDS.some((ex) => combined.includes(ex));
+  if (hasExclusion && !combined.includes('flood') && !combined.includes('landslide') && !combined.includes('cyclone') && !combined.includes('red alert')) {
+    return false;
+  }
+
+  return DISASTER_KEYWORDS.some((kw) => combined.includes(kw));
+}
+
+function cleanHtmlText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Parse Google News RSS XML response
  */
 function parseRssItems(xmlText: string): Array<{
   title: string;
@@ -290,7 +673,7 @@ function parseRssItems(xmlText: string): Array<{
 
     // Title
     const titleMatch = itemContent.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
-    let fullTitle = titleMatch ? titleMatch[1].trim() : '';
+    let rawTitle = titleMatch ? titleMatch[1].trim() : '';
 
     // Link
     const linkMatch = itemContent.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
@@ -302,29 +685,21 @@ function parseRssItems(xmlText: string): Array<{
 
     // Description / Snippet
     const descMatch = itemContent.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
-    let description = descMatch ? descMatch[1].trim() : '';
+    const rawDesc = descMatch ? descMatch[1].trim() : '';
+    const description = cleanHtmlText(rawDesc);
 
-    // Clean HTML tags from description
-    description = description.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim();
-
-    // Extract Source Name from title (Google News formats titles as: "Headline - Publisher")
-    let source = 'News Desk';
+    // Extract Source Name
+    let source = 'Verified News Agency';
     const sourceMatch = itemContent.match(/<source[^>]*url="([^"]*)"[^>]*>([\s\S]*?)<\/source>/i);
     if (sourceMatch && sourceMatch[2]) {
-      source = sourceMatch[2].replace(/<[^>]*>?/gm, '').trim();
-    } else if (fullTitle.includes(' - ')) {
-      const parts = fullTitle.split(' - ');
-      source = parts.pop()?.trim() || 'News Desk';
-      fullTitle = parts.join(' - ').trim();
+      source = cleanHtmlText(sourceMatch[2]);
+    } else if (rawTitle.includes(' - ')) {
+      const parts = rawTitle.split(' - ');
+      source = parts.pop()?.trim() || 'Verified News Agency';
+      rawTitle = parts.join(' - ').trim();
     }
 
-    // Decode standard XML entities
-    fullTitle = fullTitle
-      .replace(/&quot;/g, '"')
-      .replace(/&apos;/g, "'")
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&');
+    const fullTitle = cleanHtmlText(rawTitle);
 
     if (fullTitle && link) {
       items.push({
@@ -341,22 +716,7 @@ function parseRssItems(xmlText: string): Array<{
 }
 
 /**
- * Check if a title or description is natural disaster related
- */
-function isDisasterRelated(title: string, desc: string): boolean {
-  const combined = `${title} ${desc}`.toLowerCase();
-
-  // Must not contain obvious entertainment/sports exclusions unless explicitly a disaster
-  const hasExclusion = NON_DISASTER_EXCLUDE.some((ex) => combined.includes(ex));
-  if (hasExclusion && !combined.includes('flood') && !combined.includes('landslide') && !combined.includes('cyclone')) {
-    return false;
-  }
-
-  return DISASTER_KEYWORDS.some((kw) => combined.includes(kw));
-}
-
-/**
- * Calculate title similarity (Jaccard token overlap) to deduplicate wire reprints
+ * Deduplicate articles by normalized token similarity
  */
 function areDuplicates(titleA: string, titleB: string): boolean {
   const normalize = (t: string) =>
@@ -381,182 +741,9 @@ function areDuplicates(titleA: string, titleB: string): boolean {
   const union = tokensA.size + tokensB.size - intersection;
   const similarity = intersection / union;
 
-  return similarity > 0.65;
+  return similarity > 0.60;
 }
 
-/**
- * Fetch USGS Real-Time Earthquakes for India bounding box
- */
-async function fetchUsgsEarthquakesForIndia(timeframe: 'today' | '30days'): Promise<VerifiedDisasterNewsItem[]> {
-  try {
-    const days = timeframe === 'today' ? 1 : 30;
-    const startTime = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-    const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTime}&minmagnitude=3.0&minlatitude=6.0&maxlatitude=38.0&minlongitude=68.0&maxlongitude=98.0&orderby=time&limit=25`;
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (!res.ok) return [];
-
-    const data = await res.json();
-    if (!data || !data.features || !Array.isArray(data.features)) return [];
-
-    const items: VerifiedDisasterNewsItem[] = [];
-
-    for (const feature of data.features) {
-      const props = feature.properties;
-      const mag = props.mag || 3.5;
-      const place = props.place || 'India Region';
-      const eventTime = new Date(props.time);
-      const { formatted, isToday } = formatPubDate(eventTime);
-
-      const title = `Magnitude ${mag.toFixed(1)} Earthquake Detected near ${place}`;
-      const summary = `A seismic event of magnitude ${mag.toFixed(
-        1
-      )} was recorded at a focal depth of ${
-        feature.geometry?.coordinates?.[2] ? Math.round(feature.geometry.coordinates[2]) + ' km' : 'shallow depth'
-      }. Seismic stations across the National Centre for Seismology (NCS) and USGS network monitored the tremor.`;
-
-      items.push({
-        id: `usgs-eq-${feature.id || Date.now()}`,
-        title,
-        summary,
-        source: 'National Seismological Network / USGS',
-        sourceUrl: props.url || `https://earthquake.usgs.gov/earthquakes/eventpage/${feature.id}`,
-        publishedAt: eventTime.toISOString(),
-        formattedDate: formatted,
-        location: {
-          label: place,
-        },
-        disasterType: 'Earthquake',
-        severity: mag >= 5.5 ? 'CRITICAL' : mag >= 4.5 ? 'HIGH' : mag >= 3.5 ? 'MODERATE' : 'LOW',
-        statusBadge: isToday ? 'LIVE' : undefined,
-        isToday,
-        isOfficialWarning: true,
-        officialAuthority: 'NCS / USGS Seismological Mesh',
-      });
-    }
-
-    return items;
-  } catch (err) {
-    console.warn('USGS earthquake fetch error (safe fallback):', err);
-    return [];
-  }
-}
-
-/**
- * Fetch Indian natural disaster news using Google News RSS feeds
- */
-async function fetchGoogleNewsDisasters(
-  query: string,
-  timeframe: 'today' | '30days'
-): Promise<VerifiedDisasterNewsItem[]> {
-  try {
-    const encodedQuery = encodeURIComponent(query);
-    const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=en-IN&gl=IN&ceid=IN:en`;
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 7000);
-
-    const response = await fetch(rssUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 LandSafeAI/2.0',
-        Accept: 'application/rss+xml, application/xml, text/xml',
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      console.warn(`Google News RSS responded with status: ${response.status}`);
-      return [];
-    }
-
-    const xmlText = await response.text();
-    const parsed = parseRssItems(xmlText);
-    const now = new Date();
-    const maxDays = timeframe === 'today' ? 1.5 : 32;
-
-    const results: VerifiedDisasterNewsItem[] = [];
-
-    for (let i = 0; i < parsed.length; i++) {
-      const item = parsed[i];
-
-      // Validate URL
-      if (!item.link || (!item.link.startsWith('http://') && !item.link.startsWith('https://'))) {
-        continue;
-      }
-
-      // Check date
-      const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();
-      if (isNaN(pubDate.getTime())) continue;
-
-      const diffDays = (now.getTime() - pubDate.getTime()) / (1000 * 60 * 60 * 24);
-      if (diffDays > maxDays || diffDays < -1) {
-        continue;
-      }
-
-      // Check disaster relevance
-      if (!isDisasterRelated(item.title, item.description)) {
-        continue;
-      }
-
-      const { formatted, isToday } = formatPubDate(pubDate);
-      if (timeframe === 'today' && !isToday && diffDays > 0.9) {
-        continue;
-      }
-
-      const category = classifyDisasterType(`${item.title} ${item.description}`);
-      const severity = assessSeverity(`${item.title} ${item.description}`, category);
-      const statusBadge = determineStatusBadge(pubDate, item.title);
-
-      // Create a clean 2-4 line summary
-      let summary = item.description;
-      if (!summary || summary.length < 40) {
-        summary = `${item.title}. Meteorological and local disaster management authorities are monitoring the ongoing weather conditions and advising residents to exercise precaution.`;
-      } else if (summary.length > 280) {
-        summary = summary.slice(0, 277) + '...';
-      }
-
-      // Extract location label
-      let locLabel = 'India';
-      const locMatch = item.title.match(/in ([A-Za-z\s]+)(?:,\s*([A-Za-z\s]+))?/i);
-      if (locMatch && locMatch[1]) {
-        locLabel = locMatch[1].trim();
-      }
-
-      results.push({
-        id: `gn-${Buffer.from(item.link).toString('base64').slice(0, 24)}-${i}`,
-        title: item.title,
-        summary,
-        source: item.source || 'Verified Indian News Agency',
-        sourceUrl: item.link,
-        publishedAt: pubDate.toISOString(),
-        formattedDate: formatted,
-        location: {
-          label: locLabel,
-        },
-        disasterType: category,
-        severity,
-        statusBadge,
-        isToday,
-      });
-    }
-
-    return results;
-  } catch (err) {
-    console.warn('Error fetching Google News RSS feed:', err);
-    return [];
-  }
-}
-
-/**
- * Deduplicate news articles
- */
 function deduplicateArticles(articles: VerifiedDisasterNewsItem[]): VerifiedDisasterNewsItem[] {
   const unique: VerifiedDisasterNewsItem[] = [];
 
@@ -571,132 +758,118 @@ function deduplicateArticles(articles: VerifiedDisasterNewsItem[]): VerifiedDisa
 }
 
 /**
- * High-reliability curated real emergency feeds for Indian states & disaster zones
+ * Fetch USGS Real-Time Earthquakes for India region (Lat 6°-38°N, Lng 68°-98°E)
  */
-function getCuratedRealIndianDisasterAlerts(
-  stateName?: string,
-  districtName?: string
-): VerifiedDisasterNewsItem[] {
-  const now = new Date();
-  const todayStr = formatPubDate(now);
+async function fetchUsgsEarthquakesForIndia(timeframe: DisasterNewsTimeframe): Promise<VerifiedDisasterNewsItem[]> {
+  try {
+    const days = timeframe === 'today' ? 1.2 : 30;
+    const startTime = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-  const curated: VerifiedDisasterNewsItem[] = [
-    {
-      id: 'imd-red-alert-himalaya',
-      title: 'IMD Issues Red Alert for Heavy to Extremely Heavy Rainfall in Western Himalayan Region',
-      summary:
-        'The India Meteorological Department (IMD) has issued a Red Alert forecasting intense monsoon precipitation over Himachal Pradesh, Uttarakhand, and Jammu & Kashmir. High-velocity runoff and saturated soil mantles have heightened the risk of localized landslides and flash floods.',
-      source: 'India Meteorological Department (IMD)',
-      sourceUrl: 'https://mausam.imd.gov.in/',
-      publishedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-      formattedDate: todayStr.formatted,
-      location: {
-        state: 'Himachal Pradesh',
-        district: 'Shimla',
-        label: 'Western Himalayas, Himachal Pradesh & Uttarakhand',
-      },
-      disasterType: 'Heavy Rain',
-      severity: 'CRITICAL',
-      statusBadge: 'LIVE',
-      isToday: true,
-      isOfficialWarning: true,
-      officialAuthority: 'IMD National Weather Forecasting Centre',
-    },
-    {
-      id: 'ndma-flood-northeast',
-      title: 'Brahmaputra and Tributaries Flow Above Danger Mark in Assam; NDRF Deploys 14 Flood Rescue Teams',
-      summary:
-        'State Disaster Management Authorities (ASDMA) and Central Water Commission report rising flood stages along the Brahmaputra basin. Low-lying districts have been alerted with NDRF disaster response batallions stationed for immediate evacuation and humanitarian aid.',
-      source: 'NDMA & Assam State Disaster Management Authority',
-      sourceUrl: 'https://ndma.gov.in/',
-      publishedAt: new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString(),
-      formattedDate: todayStr.formatted,
-      location: {
-        state: 'Assam',
-        district: 'Kamrup',
-        label: 'Guwahati & Brahmaputra Basin, Assam',
-      },
-      disasterType: 'Flood',
-      severity: 'CRITICAL',
-      statusBadge: 'BREAKING',
-      isToday: true,
-      isOfficialWarning: true,
-      officialAuthority: 'NDMA / ASDMA Emergency Control Room',
-    },
-    {
-      id: 'gsi-landslide-darjeeling',
-      title: 'GSI National Landslide Early Warning Bulletin: Active Slope Creep Monitored Along Teesta Valley NH-10 Corridor',
-      summary:
-        'Geological Survey of India (GSI) borehole sensors and satellite radar interferometry have recorded elevated pore-water pressures along the Darjeeling-Kalimpong highway corridor. Heavy rainfall continues to compromise embankment stability on cut slopes.',
-      source: 'Geological Survey of India (GSI)',
-      sourceUrl: 'https://www.gsi.gov.in/',
-      publishedAt: new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString(),
-      formattedDate: todayStr.formatted,
-      location: {
-        state: 'West Bengal',
-        district: 'Darjeeling',
-        area: 'Kalimpong Corridor',
-        label: 'Darjeeling & Kalimpong, West Bengal',
-      },
-      disasterType: 'Landslide',
-      severity: 'HIGH',
-      statusBadge: 'UPDATED',
-      isToday: true,
-      isOfficialWarning: true,
-      officialAuthority: 'GSI National Landslide Forecasting Centre',
-    },
-    {
-      id: 'sdrf-western-ghats-alert',
-      title: 'Western Ghats Monsoon Surge: Precautionary Evacuation Advisories Issued for Wayanad and Idukki Slopes',
-      summary:
-        'Kerala State Disaster Management Authority (KSDMA) has warned residents in high-gradient catchment zones of potential mudslides following 140 mm cumulative 24-hour rainfall. Emergency relief shelters and medical response units are active.',
-      source: 'Kerala State Disaster Management Authority (KSDMA)',
-      sourceUrl: 'https://sdma.kerala.gov.in/',
-      publishedAt: new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString(),
-      formattedDate: todayStr.formatted,
-      location: {
-        state: 'Kerala',
-        district: 'Wayanad',
-        label: 'Wayanad & Idukki, Kerala',
-      },
-      disasterType: 'Landslide',
-      severity: 'HIGH',
-      statusBadge: 'ONGOING',
-      isToday: true,
-      isOfficialWarning: true,
-      officialAuthority: 'KSDMA Emergency Operations Center',
-    },
-    {
-      id: 'cyclone-alert-coastal',
-      title: 'Deep Depression over Bay of Bengal Likely to Intensify; Coastal Odisha and Andhra Pradesh on Alert',
-      summary:
-        'Meteorological radars in Paradip and Visakhapatnam indicate squally wind speeds reaching 55–65 km/h gusting to 75 km/h. Fishermen have been advised not to venture into deep sea waters along the east coast.',
-      source: 'Cyclone Warning Division, IMD',
-      sourceUrl: 'https://rsmcnewdelhi.imd.gov.in/',
-      publishedAt: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString(),
-      formattedDate: todayStr.formatted,
-      location: {
-        state: 'Odisha',
-        district: 'Puri',
-        label: 'Coastal Odisha & North Andhra Pradesh',
-      },
-      disasterType: 'Cyclone',
-      severity: 'HIGH',
-      statusBadge: 'LIVE',
-      isToday: true,
-      isOfficialWarning: true,
-      officialAuthority: 'IMD RSMC Cyclone Warning Centre',
-    },
-  ];
+    const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTime}&minmagnitude=3.0&minlatitude=6.0&maxlatitude=38.0&minlongitude=68.0&maxlongitude=98.0&orderby=time&limit=30`;
 
-  return curated;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    if (!data || !data.features || !Array.isArray(data.features)) return [];
+
+    const items: VerifiedDisasterNewsItem[] = [];
+    const now = new Date();
+
+    for (const feature of data.features) {
+      const props = feature.properties;
+      const mag = props.mag || 3.5;
+      const place = props.place || 'India Region';
+      const eventTime = new Date(props.time);
+
+      if (isNaN(eventTime.getTime())) continue;
+
+      const diffDays = (now.getTime() - eventTime.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > 30.0) continue;
+
+      const isToday = isPublishedToday(eventTime, now);
+      if (timeframe === 'today' && !isToday) continue;
+
+      const { formatted } = formatPubDate(eventTime, now);
+
+      const title = `Magnitude ${mag.toFixed(1)} Earthquake Detected near ${place}`;
+      const depth = feature.geometry?.coordinates?.[2] ? `${Math.round(feature.geometry.coordinates[2])} km` : 'shallow focal depth';
+      const summary = `A seismic event of magnitude ${mag.toFixed(1)} was recorded at a focal depth of ${depth}. Seismological telemetry stations across the National Centre for Seismology (NCS) and USGS network registered the tremor.`;
+
+      items.push({
+        id: `usgs-eq-${feature.id || Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        title,
+        summary,
+        source: 'National Centre for Seismology / USGS',
+        sourceUrl: props.url || `https://earthquake.usgs.gov/earthquakes/eventpage/${feature.id}`,
+        publishedAt: eventTime.toISOString(),
+        formattedDate: formatted,
+        location: {
+          label: place.includes('India') ? place : `${place}, India`,
+        },
+        disasterType: 'Earthquake',
+        severity: mag >= 5.5 ? 'CRITICAL' : mag >= 4.5 ? 'HIGH' : mag >= 3.5 ? 'MODERATE' : 'LOW',
+        statusBadge: isToday ? 'LIVE' : undefined,
+        isToday,
+        isOfficialWarning: true,
+        officialAuthority: 'NCS / USGS Seismological Network',
+      });
+    }
+
+    return items;
+  } catch (err) {
+    console.warn('USGS earthquake fetch warning:', err);
+    return [];
+  }
 }
 
 /**
- * Main Service Method to fetch Disaster News for India
+ * Fetch a single Google News RSS query with timeout
+ */
+async function fetchSingleGoogleNewsRss(query: string): Promise<Array<{
+  title: string;
+  link: string;
+  pubDate: string;
+  description: string;
+  source: string;
+}>> {
+  try {
+    const encodedQuery = encodeURIComponent(query);
+    const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=en-IN&gl=IN&ceid=IN:en`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+
+    const response = await fetch(rssUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 LandSafeAI/3.0',
+        Accept: 'application/rss+xml, application/xml, text/xml',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const xmlText = await response.text();
+    return parseRssItems(xmlText);
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Main Service Method to fetch live Indian Disaster News
  */
 export async function getIndianDisasterNews(options: {
-  timeframe: 'today' | '30days' | 'my-location';
+  timeframe?: DisasterNewsTimeframe;
   state?: string;
   district?: string;
   area?: string;
@@ -705,7 +878,7 @@ export async function getIndianDisasterNews(options: {
   forceRefresh?: boolean;
 }): Promise<DisasterNewsResponse> {
   const {
-    timeframe = 'today',
+    timeframe = 'all',
     state,
     district,
     area,
@@ -714,8 +887,8 @@ export async function getIndianDisasterNews(options: {
     forceRefresh = false,
   } = options;
 
-  // Cache key
-  const cacheKey = `disasterNews:${timeframe}:${state || 'all'}:${district || 'all'}:${area || 'all'}:${disasterType}:${searchQuery}`;
+  // Cache Key
+  const cacheKey = `disasterNews:${timeframe}:${state || 'all'}:${district || 'all'}:${area || 'all'}:${disasterType}:${searchQuery.trim().toLowerCase()}`;
 
   if (!forceRefresh) {
     const cached = NEWS_CACHE.get(cacheKey);
@@ -724,80 +897,133 @@ export async function getIndianDisasterNews(options: {
     }
   }
 
-  let query = '';
-  let locationScope: DisasterNewsResponse['locationScope'] = {
-    state,
-    district,
-    area,
-    isFallback: false,
-    fallbackLevel: null,
-  };
+  const now = new Date();
 
-  // Build targeted queries
+  // Construct diverse high-yield queries based on timeframe
+  const queries: string[] = [];
+
   if (timeframe === 'my-location') {
-    const locTerms: string[] = [];
-    if (area && area !== 'Current Sector' && !area.includes('Sector')) locTerms.push(`"${area}"`);
-    if (district && district !== 'District') locTerms.push(`"${district}"`);
-    if (state && state !== 'India') locTerms.push(`"${state}"`);
+    const locParts: string[] = [];
+    if (area && area !== 'Current Sector' && !area.includes('Sector')) locParts.push(`"${area}"`);
+    if (district && district !== 'District') locParts.push(`"${district}"`);
+    if (state && state !== 'India') locParts.push(`"${state}"`);
 
-    const locationQuery = locTerms.length > 0 ? `(${locTerms.join(' OR ')})` : 'India';
-    const hazardTerms = '(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR earthquake OR "flash flood" OR disaster OR rain OR storm)';
-
-    query = `${hazardTerms} ${locationQuery} India`;
-  } else if (timeframe === 'today') {
-    query = '(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR earthquake OR "flash flood" OR avalanche OR heatwave OR thunderstorm) India when:1d';
+    const locationStr = locParts.length > 0 ? `(${locParts.join(' OR ')})` : 'India';
+    queries.push(`(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR earthquake OR alert OR disaster) ${locationStr} India`);
+    if (state && state !== 'India') {
+      queries.push(`(flood OR landslide OR "heavy rain" OR alert) "${state}" India`);
+    }
   } else {
-    // 30 days
-    query = '(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR earthquake OR "flash flood" OR avalanche OR heatwave OR "land subsidence" OR wildfire) India when:30d';
+    // Multi-query parallel fetching across India
+    queries.push('(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR earthquake) India');
+    queries.push('(landslide OR "flash flood" OR cloudburst OR "heavy rainfall" OR "slope failure") (Himachal OR Uttarakhand OR Kerala OR Assam OR Wayanad OR Darjeeling OR Sikkim OR Nilgiris OR India)');
+    queries.push('(flood OR inundation OR "river water" OR "dam overflow" OR "waterlogging" OR "danger mark") (Assam OR Bihar OR "Uttar Pradesh" OR Odisha OR Maharashtra OR Gujarat OR "Tamil Nadu" OR "West Bengal" OR India)');
+    queries.push('(cyclone OR "deep depression" OR thunderstorm OR lightning OR "severe storm" OR gale) (India OR "Bay of Bengal" OR "Arabian Sea" OR Odisha OR "Andhra Pradesh" OR Gujarat)');
+    queries.push('(IMD alert OR "red alert" OR "orange alert" OR "flood alert" OR "landslide warning" OR NDMA OR NDRF) India');
+    queries.push('(earthquake OR tremor OR avalanche OR "land subsidence" OR GSI OR "National Centre for Seismology") India');
   }
 
-  if (disasterType && disasterType !== 'All') {
-    query += ` "${disasterType}"`;
-  }
-
-  if (searchQuery.trim()) {
-    query += ` "${searchQuery.trim()}"`;
-  }
-
-  // Parallel news fetch: Google News RSS + USGS Earthquake Feed + Official Bulletins
-  const [googleArticles, usgsEarthquakes] = await Promise.all([
-    fetchGoogleNewsDisasters(query, timeframe === 'my-location' ? '30days' : timeframe),
-    fetchUsgsEarthquakesForIndia(timeframe === 'my-location' ? '30days' : timeframe),
+  // Fetch all RSS feeds + USGS Earthquakes concurrently
+  const [rssFeedResults, usgsEarthquakes] = await Promise.all([
+    Promise.all(queries.map((q) => fetchSingleGoogleNewsRss(q))),
+    fetchUsgsEarthquakesForIndia(timeframe),
   ]);
 
-  let combined = [...googleArticles, ...usgsEarthquakes];
+  const rawParsedItems = rssFeedResults.flat();
+  const verifiedArticles: VerifiedDisasterNewsItem[] = [];
 
-  // If results are sparse for my-location, intelligently fetch hierarchical fallback (District -> State -> Region)
-  if (timeframe === 'my-location' && combined.length < 3 && state && state !== 'India') {
-    const fallbackQuery = `(flood OR landslide OR "heavy rain" OR cyclone OR disaster OR storm) "${state}" India when:30d`;
-    const stateArticles = await fetchGoogleNewsDisasters(fallbackQuery, '30days');
+  for (let i = 0; i < rawParsedItems.length; i++) {
+    const item = rawParsedItems[i];
 
-    if (stateArticles.length > 0) {
-      combined = [...combined, ...stateArticles];
-      locationScope.isFallback = true;
-      locationScope.fallbackLevel = district ? 'state' : 'national';
+    if (!item.link || (!item.link.startsWith('http://') && !item.link.startsWith('https://'))) {
+      continue;
     }
+
+    const pubDate = item.pubDate ? new Date(item.pubDate) : null;
+    if (!pubDate || isNaN(pubDate.getTime())) continue;
+
+    const diffDays = (now.getTime() - pubDate.getTime()) / (1000 * 60 * 60 * 24);
+
+    // 1. Timeframe Check
+    if (timeframe === '30days') {
+      // Must be within rolling 30 days
+      if (diffDays > 30.0 || diffDays < -0.1) continue;
+    } else if (timeframe === 'today') {
+      // Must be published today
+      if (!isPublishedToday(pubDate, now)) continue;
+    } else if (timeframe === 'all' || timeframe === 'my-location') {
+      // Reasonable freshness window (up to 45 days)
+      if (diffDays > 45.0 || diffDays < -0.1) continue;
+    }
+
+    // 2. Disaster Relevance Check
+    if (!isDisasterArticle(item.title, item.description)) {
+      continue;
+    }
+
+    // 3. Strict India Location Verification
+    const indiaLoc = extractIndiaLocation(item.title, item.description);
+    if (!indiaLoc) {
+      // Excluded: pure foreign event
+      continue;
+    }
+
+    const category = classifyDisasterType(`${item.title} ${item.description}`);
+    const severity = assessSeverity(`${item.title} ${item.description}`, category);
+    const isToday = isPublishedToday(pubDate, now);
+    const { formatted } = formatPubDate(pubDate, now);
+    const statusBadge = determineStatusBadge(pubDate, item.title);
+
+    // Create a concise 1-2 sentence readable summary
+    let summary = item.description;
+    if (!summary || summary.length < 35) {
+      summary = `${item.title}. Disaster management authorities and meteorological teams are actively monitoring conditions across the region.`;
+    } else if (summary.length > 250) {
+      const truncated = summary.slice(0, 240);
+      const lastPeriod = truncated.lastIndexOf('.');
+      summary = lastPeriod > 100 ? truncated.slice(0, lastPeriod + 1) : truncated + '...';
+    }
+
+    const isOfficial =
+      item.source.toLowerCase().includes('imd') ||
+      item.source.toLowerCase().includes('ndma') ||
+      item.source.toLowerCase().includes('gsi') ||
+      item.source.toLowerCase().includes('ndrf') ||
+      item.source.toLowerCase().includes('air') ||
+      item.source.toLowerCase().includes('pib') ||
+      item.title.toLowerCase().includes('alert') ||
+      item.title.toLowerCase().includes('warning');
+
+    verifiedArticles.push({
+      id: `gn-${Buffer.from(item.link).toString('base64').slice(0, 22)}-${i}`,
+      title: item.title,
+      summary,
+      source: item.source || 'Verified Indian News Source',
+      sourceUrl: item.link,
+      publishedAt: pubDate.toISOString(),
+      formattedDate: formatted,
+      location: indiaLoc,
+      disasterType: category,
+      severity,
+      statusBadge,
+      isToday,
+      isOfficialWarning: isOfficial,
+      officialAuthority: isOfficial ? item.source : undefined,
+    });
   }
 
-  // Add verified official agency bulletins if appropriate
-  const officialAlerts = getCuratedRealIndianDisasterAlerts(state, district);
-  for (const alert of officialAlerts) {
-    if (timeframe === 'today' || (timeframe === 'my-location' && alert.location.state === state)) {
-      combined.unshift(alert);
-    } else if (timeframe === '30days') {
-      combined.push(alert);
-    }
-  }
+  // Combine Google News + USGS Earthquakes
+  let allCombined = [...verifiedArticles, ...usgsEarthquakes];
 
-  // Deduplicate
-  let filtered = deduplicateArticles(combined);
+  // Deduplicate substantially identical stories
+  let filtered = deduplicateArticles(allCombined);
 
-  // Apply In-Memory Disaster Category Filter if specified
+  // Apply Disaster Category Filter if specified
   if (disasterType && disasterType !== 'All') {
     filtered = filtered.filter((item) => item.disasterType === disasterType);
   }
 
-  // Apply In-Memory Search Filter
+  // Apply Search Query Filter if specified
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
     filtered = filtered.filter(
@@ -811,31 +1037,42 @@ export async function getIndianDisasterNews(options: {
     );
   }
 
-  // Filter for TODAY if timeframe === 'today'
+  // Apply Strict Today Filter if timeframe is 'today'
   if (timeframe === 'today') {
-    const todayArticles = filtered.filter((item) => item.isToday);
-    // If today is early morning and count is low, include latest verified within 24h
-    if (todayArticles.length >= 2) {
-      filtered = todayArticles;
-    }
+    filtered = filtered.filter((item) => item.isToday);
   }
 
-  // Sort by Newest First (with Priority to LIVE and CRITICAL)
+  // Apply Strict 30-Day Filter if timeframe is '30days'
+  if (timeframe === '30days') {
+    filtered = filtered.filter((item) => {
+      const pubTime = new Date(item.publishedAt).getTime();
+      const diffDays = (now.getTime() - pubTime) / (1000 * 60 * 60 * 24);
+      return diffDays >= -0.1 && diffDays <= 30.0;
+    });
+  }
+
+  // Sort strictly Newest -> Oldest (with priority to LIVE alerts)
   filtered.sort((a, b) => {
     const timeA = new Date(a.publishedAt).getTime();
     const timeB = new Date(b.publishedAt).getTime();
 
-    const scoreA = (a.statusBadge === 'LIVE' ? 1000000000 : 0) + (a.severity === 'CRITICAL' ? 500000000 : 0) + timeA;
-    const scoreB = (b.statusBadge === 'LIVE' ? 1000000000 : 0) + (b.severity === 'CRITICAL' ? 500000000 : 0) + timeB;
+    const priorityA = (a.statusBadge === 'LIVE' ? 1000000000 : 0) + timeA;
+    const priorityB = (b.statusBadge === 'LIVE' ? 1000000000 : 0) + timeB;
 
-    return scoreB - scoreA;
+    return priorityB - priorityA;
   });
 
   const responsePayload: DisasterNewsResponse = {
     timeframe,
     totalResults: filtered.length,
     lastUpdated: new Date().toISOString(),
-    locationScope,
+    locationScope: {
+      state,
+      district,
+      area,
+      isFallback: false,
+      fallbackLevel: null,
+    },
     articles: filtered,
   };
 
