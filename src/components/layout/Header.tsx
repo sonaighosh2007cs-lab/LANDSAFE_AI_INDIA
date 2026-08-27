@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Globe,
   MapPin,
@@ -9,7 +9,7 @@ import {
   X,
   User,
   Shield,
-  RotateCcw,
+  LogOut,
   Sliders,
   Check,
   AlertTriangle,
@@ -31,12 +31,37 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
     setIsLocationModalOpen,
     setIsNotificationDrawerOpen,
     logoutUser,
-    resetOnboarding,
     setActiveRoute,
   } = useApp();
 
   const [isScenarioDropdownOpen, setIsScenarioDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const scenarioDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileDropdownOpen(false);
+      }
+      if (
+        scenarioDropdownRef.current &&
+        !scenarioDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsScenarioDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const getInitials = (name: string) => {
     if (!name || !name.trim()) return 'OP';
@@ -101,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
         </button>
 
         {/* Live Simulation Scenario Selector Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={scenarioDropdownRef}>
           <button
             onClick={() => setIsScenarioDropdownOpen(!isScenarioDropdownOpen)}
             className="interactive-btn hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#121214] border border-white/10 hover:border-white/20 text-xs font-mono text-orange-400 transition-colors cursor-pointer"
@@ -157,10 +182,12 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
         </button>
 
         {/* User Profile Avatar with Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={profileDropdownRef}>
           <button
+            id="user-profile-menu-btn"
             onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
             className="interactive-btn flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-[#121214] border border-white/10 hover:border-orange-500/50 transition-all cursor-pointer"
+            aria-label="User profile menu"
           >
             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow-sm">
               {getInitials(userProfile.name)}
@@ -188,6 +215,7 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
               </div>
 
               <button
+                id="header-change-location-btn"
                 onClick={() => {
                   setIsLocationModalOpen(true);
                   setIsProfileDropdownOpen(false);
@@ -199,6 +227,7 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
               </button>
 
               <button
+                id="header-my-area-btn"
                 onClick={() => {
                   setActiveRoute('my-area');
                   setIsProfileDropdownOpen(false);
@@ -212,14 +241,15 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
               <div className="my-1 border-t border-white/5" />
 
               <button
+                id="header-logout-btn"
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
                   logoutUser();
                 }}
-                className="w-full text-left px-3 py-2 rounded-lg text-xs text-red-400 hover:bg-red-950/30 flex items-center gap-2 cursor-pointer"
+                className="w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-950/40 hover:text-red-300 flex items-center gap-2 cursor-pointer transition-colors"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Log Out / Switch Account</span>
+                <LogOut className="w-3.5 h-3.5 text-red-400" />
+                <span>Log Out / Exit Session</span>
               </button>
             </div>
           )}

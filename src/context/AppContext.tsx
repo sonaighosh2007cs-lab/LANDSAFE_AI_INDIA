@@ -10,6 +10,7 @@ import {
   ActiveAdvisory,
 } from '../types';
 import { DEFAULT_USER_LOCATION } from '../data/locations';
+import { clearClientSession } from '../services/authClient';
 import {
   getLocationTelemetry,
   getLocationCorridorSafety,
@@ -227,7 +228,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logoutUser = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('landsafe_auth_token_v3');
+      sessionStorage.removeItem('landsafe_auth_token_v3');
+      sessionStorage.clear();
+      clearClientSession();
+    } catch (e) {
+      console.error('Error clearing auth storage:', e);
+    }
+
+    // Reset modals & drawer states
+    setIsLocationModalOpen(false);
+    setIsNotificationDrawerOpen(false);
+    setIsAiAgentOpen(false);
+    setIsAnalyzingLocation(false);
+
+    // Reset profile to non-onboarded state
     setUserProfile({
       name: '',
       mobile: '',
@@ -238,7 +255,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       savedLocations: [DEFAULT_USER_LOCATION],
       onboarded: false,
     });
+
     setActiveRoute('dashboard');
+
+    try {
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    } catch (err) {
+      // safe fallback
+    }
   };
 
   const resetOnboarding = () => {
@@ -331,6 +355,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sendAiMessage,
         isAiTyping,
         resetOnboarding,
+        loginUser,
+        logoutUser,
         savedLocations: userProfile.savedLocations || [DEFAULT_USER_LOCATION],
         toggleSaveLocation,
       }}

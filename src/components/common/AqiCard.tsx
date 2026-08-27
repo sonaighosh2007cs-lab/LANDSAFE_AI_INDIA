@@ -304,18 +304,18 @@ export const AqiCard: React.FC<AqiCardProps> = ({
                   <span className="font-bold text-white">PM2.5</span>
                   <span
                     className={`text-[9px] px-1 py-0.2 rounded ${
-                      aqiData.pollutants.pm2_5.value > 60
+                      (aqiData.pollutants?.pm2_5?.value ?? 0) > 60
                         ? 'text-rose-400 bg-rose-950/60'
-                        : aqiData.pollutants.pm2_5.value > 30
+                        : (aqiData.pollutants?.pm2_5?.value ?? 0) > 30
                         ? 'text-amber-300 bg-amber-950/60'
                         : 'text-emerald-400 bg-emerald-950/60'
                     }`}
                   >
-                    {aqiData.pollutants.pm2_5.status}
+                    {aqiData.pollutants?.pm2_5?.status || 'Good'}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white font-mono">
-                  {aqiData.pollutants.pm2_5.value}{' '}
+                  {aqiData.pollutants?.pm2_5?.value ?? '--'}{' '}
                   <span className="text-[9px] font-normal text-slate-400">µg/m³</span>
                 </div>
               </div>
@@ -326,18 +326,18 @@ export const AqiCard: React.FC<AqiCardProps> = ({
                   <span className="font-bold text-white">PM10</span>
                   <span
                     className={`text-[9px] px-1 py-0.2 rounded ${
-                      aqiData.pollutants.pm10.value > 100
+                      (aqiData.pollutants?.pm10?.value ?? 0) > 100
                         ? 'text-rose-400 bg-rose-950/60'
-                        : aqiData.pollutants.pm10.value > 50
+                        : (aqiData.pollutants?.pm10?.value ?? 0) > 50
                         ? 'text-amber-300 bg-amber-950/60'
                         : 'text-emerald-400 bg-emerald-950/60'
                     }`}
                   >
-                    {aqiData.pollutants.pm10.status}
+                    {aqiData.pollutants?.pm10?.status || 'Good'}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white font-mono">
-                  {aqiData.pollutants.pm10.value}{' '}
+                  {aqiData.pollutants?.pm10?.value ?? '--'}{' '}
                   <span className="text-[9px] font-normal text-slate-400">µg/m³</span>
                 </div>
               </div>
@@ -347,11 +347,11 @@ export const AqiCard: React.FC<AqiCardProps> = ({
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
                   <span className="font-bold text-white">NO₂</span>
                   <span className="text-[9px] text-emerald-400 bg-emerald-950/60 px-1 py-0.2 rounded">
-                    {aqiData.pollutants.no2.status}
+                    {aqiData.pollutants?.no2?.status || 'Good'}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white font-mono">
-                  {aqiData.pollutants.no2.value}{' '}
+                  {aqiData.pollutants?.no2?.value ?? '--'}{' '}
                   <span className="text-[9px] font-normal text-slate-400">µg/m³</span>
                 </div>
               </div>
@@ -361,11 +361,11 @@ export const AqiCard: React.FC<AqiCardProps> = ({
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
                   <span className="font-bold text-white">SO₂</span>
                   <span className="text-[9px] text-emerald-400 bg-emerald-950/60 px-1 py-0.2 rounded">
-                    {aqiData.pollutants.so2.status}
+                    {aqiData.pollutants?.so2?.status || 'Good'}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white font-mono">
-                  {aqiData.pollutants.so2.value}{' '}
+                  {aqiData.pollutants?.so2?.value ?? '--'}{' '}
                   <span className="text-[9px] font-normal text-slate-400">µg/m³</span>
                 </div>
               </div>
@@ -375,11 +375,11 @@ export const AqiCard: React.FC<AqiCardProps> = ({
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
                   <span className="font-bold text-white">CO</span>
                   <span className="text-[9px] text-emerald-400 bg-emerald-950/60 px-1 py-0.2 rounded">
-                    {aqiData.pollutants.co.status}
+                    {aqiData.pollutants?.co?.status || 'Good'}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white font-mono">
-                  {aqiData.pollutants.co.value}{' '}
+                  {aqiData.pollutants?.co?.value ?? '--'}{' '}
                   <span className="text-[9px] font-normal text-slate-400">µg/m³</span>
                 </div>
               </div>
@@ -389,11 +389,11 @@ export const AqiCard: React.FC<AqiCardProps> = ({
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
                   <span className="font-bold text-white">O₃</span>
                   <span className="text-[9px] text-emerald-400 bg-emerald-950/60 px-1 py-0.2 rounded">
-                    {aqiData.pollutants.o3.status}
+                    {aqiData.pollutants?.o3?.status || 'Good'}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white font-mono">
-                  {aqiData.pollutants.o3.value}{' '}
+                  {aqiData.pollutants?.o3?.value ?? '--'}{' '}
                   <span className="text-[9px] font-normal text-slate-400">µg/m³</span>
                 </div>
               </div>

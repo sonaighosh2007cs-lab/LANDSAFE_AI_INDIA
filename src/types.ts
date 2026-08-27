@@ -123,15 +123,72 @@ export interface ActiveAdvisory {
   authority: string;
 }
 
+export type DisasterCategory =
+  | 'All'
+  | 'Flood'
+  | 'Heavy Rain'
+  | 'Landslide'
+  | 'Cyclone'
+  | 'Storm'
+  | 'Earthquake'
+  | 'Tsunami'
+  | 'Heatwave'
+  | 'Wildfire'
+  | 'Cloudburst'
+  | 'Avalanche'
+  | 'Lightning'
+  | 'Land Subsidence'
+  | 'Other';
+
+export type DisasterSeverity = 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
+export type NewsStatusBadge = 'LIVE' | 'BREAKING' | 'UPDATED' | 'ONGOING';
+
+export interface VerifiedDisasterNewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  sourceUrl: string;
+  imageUrl?: string;
+  publishedAt: string;
+  formattedDate: string;
+  location: {
+    state?: string;
+    district?: string;
+    area?: string;
+    label: string;
+  };
+  disasterType: DisasterCategory;
+  severity: DisasterSeverity;
+  statusBadge?: NewsStatusBadge;
+  isToday: boolean;
+  isOfficialWarning?: boolean;
+  officialAuthority?: string;
+}
+
+export interface DisasterNewsResponse {
+  timeframe: 'today' | '30days' | 'my-location';
+  totalResults: number;
+  lastUpdated: string;
+  locationScope: {
+    state?: string;
+    district?: string;
+    area?: string;
+    isFallback?: boolean;
+    fallbackLevel?: 'district' | 'state' | 'national' | null;
+  };
+  articles: VerifiedDisasterNewsItem[];
+}
+
 export interface DisasterNewsItem {
   id: string;
   title: string;
   summary: string;
-  source: 'IMD' | 'GSI' | 'NDMA' | 'SDRF' | 'BRO' | 'PTI' | 'DD News';
+  source: 'IMD' | 'GSI' | 'NDMA' | 'SDRF' | 'BRO' | 'PTI' | 'DD News' | string;
   timestamp: string;
   severity: 'Normal' | 'Alert' | 'Severe' | 'Critical';
   state: string;
-  category: 'Landslide' | 'Cloudburst' | 'Flash Flood' | 'Highway Blockage' | 'Early Warning';
+  category: 'Landslide' | 'Cloudburst' | 'Flash Flood' | 'Highway Blockage' | 'Early Warning' | string;
   verified: boolean;
   affectedDistricts: string[];
 }

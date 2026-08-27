@@ -33,6 +33,11 @@ import {
 } from '../../data/locations';
 import { UserLocation } from '../../types';
 import { LandSafeLogo } from '../common/LandSafeLogo';
+import {
+  clientLogin,
+  clientRegister,
+  clientResetPassword,
+} from '../../services/authClient';
 
 type OnboardingStep =
   | 'welcome'
@@ -231,47 +236,34 @@ export const OnboardingFlow: React.FC = () => {
     const activeContact = contactType === 'mobile' ? cleanMobileDigits : emailAddress.trim();
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: fullName.trim(),
-          contact: activeContact,
-          contactType,
-          password,
-          age: numAge,
-          location: selectedLocation,
-        }),
+      const result = await clientRegister({
+        name: fullName.trim(),
+        contact: activeContact,
+        contactType,
+        password,
+        age: numAge,
+        location: selectedLocation,
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        setRegisterError(data.error || 'Unable to complete registration. Please try again.');
+      if (!result.success || !result.user) {
+        setRegisterError(result.error || 'Unable to complete registration. Please try again.');
         setIsSubmittingRegister(false);
         return;
       }
 
-      // Complete client-side context setup with the registered profile
+      // Complete context onboarding with registered user
       await completeOnboarding({
-        name: data.user.name,
-        mobile: data.user.mobile,
-        email: data.user.email,
-        age: data.user.age,
-        ageGroup: derivedAgeGroup(data.user.age),
-        location: data.user.location,
+        name: result.user.name,
+        mobile: result.user.mobile,
+        email: result.user.email,
+        age: result.user.age,
+        ageGroup: derivedAgeGroup(result.user.age || numAge),
+        location: result.user.location,
       });
     } catch (err: any) {
-      console.error('Registration network error:', err);
-      // Seamless fallback to client store if offline
-      await completeOnboarding({
-        name: fullName.trim(),
-        mobile: contactType === 'mobile' ? cleanMobileDigits : '',
-        email: contactType === 'email' ? emailAddress.trim() : '',
-        age: numAge,
-        ageGroup: derivedAgeGroup(numAge),
-        location: selectedLocation,
-      });
+      console.error('Registration error:', err);
+      setRegisterError('Unable to complete registration. Please try again.');
+      setIsSubmittingRegister(false);
     }
   };
 
@@ -287,39 +279,21 @@ export const OnboardingFlow: React.FC = () => {
     setLoginError(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: loginIdentifier.trim(),
-          password: loginPassword,
-        }),
-      });
+      const result = await clientLogin(loginIdentifier.trim(), loginPassword);
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
+      if (!result.success || !result.user) {
         setFailedLoginAttempts((prev) => prev + 1);
-        setLoginError(data.error || 'Invalid login details.');
+        setLoginError(result.error || 'Invalid login details.');
         setIsSubmittingLogin(false);
         return;
       }
 
-      // Login successful! Restore profile and open Dashboard
-      await loginUser({
-        name: data.user.name,
-        mobile: data.user.mobile || '',
-        email: data.user.email || '',
-        age: data.user.age,
-        ageGroup: data.user.ageGroup || derivedAgeGroup(data.user.age || 25),
-        location: data.user.location,
-        onboarded: true,
-        registeredAt: data.user.registeredAt,
-      });
+      // Login successful! Restore profile and launch Dashboard
+      await loginUser(result.user);
     } catch (err: any) {
-      console.error('Login network error:', err);
+      console.error('Login error:', err);
       setFailedLoginAttempts((prev) => prev + 1);
-      setLoginError('Unable to connect to authentication server. Please verify your details.');
+      setLoginError('Unable to connect to authentication service. Please verify your details.');
       setIsSubmittingLogin(false);
     }
   };
@@ -337,24 +311,15 @@ export const OnboardingFlow: React.FC = () => {
     setResetMessage(null);
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: resetIdentifier.trim(),
-          newPassword: resetNewPassword,
-        }),
-      });
-
-      const data = await response.json();
+      const result = await clientResetPassword(resetIdentifier.trim(), resetNewPassword);
       setIsSubmittingReset(false);
 
-      if (!response.ok || !data.success) {
-        setResetError(data.error || 'Failed to reset password. Please verify your details.');
+      if (!result.success) {
+        setResetError(result.error || 'Failed to reset password. Please verify your details.');
         return;
       }
 
-      setResetMessage(data.message || 'Password successfully updated. You can now log in.');
+      setResetMessage(result.message || 'Password successfully updated. You can now log in.');
       setTimeout(() => {
         setLoginIdentifier(resetIdentifier);
         setLoginPassword('');

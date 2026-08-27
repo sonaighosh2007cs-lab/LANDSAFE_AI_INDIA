@@ -1,0 +1,60 @@
+[
+  {
+    "id": "user_1787809324703_17ab27d4",
+    "name": "RISHI GHOSH",
+    "contact": "8250015112",
+    "contactType": "mobile",
+    "mobile": "8250015112",
+    "passwordHash": "af02810d543f78ad537e0b8fb7b670f9c514ed2b567d8b9378d1ef286bd4bf934f2dc14a7ddb8b8c4517a2da1d59b48ecab93fca195bbd0eef483485f5a5cc7e",
+    "salt": "539b18fbb4134a3e4d8889f379562a1f",
+    "age": 18,
+    "ageGroup": "18–24",
+    "location": {
+      "state": "West Bengal",
+      "district": "Darjeeling",
+      "area": "Darjeeling Town",
+      "coordinates": {
+        "lat": 27.036,
+        "lng": 88.2627
+      },
+      "elevation": 2042,
+      "slopeAngle": 32,
+      "lithology": "Darjeeling Gneiss & Daling Schist Series with High Moisture Retention",
+      "riskScore": 82,
+      "riskLevel": "CRITICAL",
+      "isHazardMonitored": true
+    },
+    "failedAttempts": 0,
+    "createdAt": "2026-08-27T05:42:04.703Z",
+    "updatedAt": "2026-08-27T05:42:04.703Z"
+  },
+  {
+    "id": "user_1787809831377_51100539",
+    "name": "Test Officer",
+    "contact": "9876543210",
+    "contactType": "mobile",
+    "mobile": "9876543210",
+    "passwordHash": "a3fd92b0900bea1beeeba810134b60f690d50ae1bde3e2602cea03c155d0bff45610d6be4931fa83f181305fde3249e518068f8abb18e6e9ceb66cb3fc4241e5",
+    "salt": "1411a7215e899530c76c9572e4d9f25f",
+    "age": 28,
+    "ageGroup": "25–34",
+    "location": {
+      "state": "Mizoram",
+      "district": "Khawzawl",
+      "area": "Khawzawl Vengthlang",
+      "coordinates": {
+        "lat": 23.535,
+        "lng": 93.183
+      },
+      "elevation": 1210,
+      "slopeAngle": 28.5,
+      "lithology": "Surma Group Sandstone",
+      "riskScore": 64,
+      "riskLevel": "HIGH",
+      "isHazardMonitored": true
+    },
+    "failedAttempts": 0,
+    "createdAt": "2026-08-27T05:50:31.377Z",
+    "updatedAt": "2026-08-27T05:50:55.440Z"
+  }
+]

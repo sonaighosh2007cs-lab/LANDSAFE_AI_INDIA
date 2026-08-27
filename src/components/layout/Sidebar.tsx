@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Shield,
   Activity,
+  LogOut,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { AppRoute } from '../../types';
@@ -25,7 +26,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNavOpen }) => {
-  const { activeRoute, setActiveRoute, userProfile } = useApp();
+  const { activeRoute, setActiveRoute, userProfile, logoutUser } = useApp();
 
   const navItems: {
     id: AppRoute;
@@ -159,28 +160,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
           </div>
         </div>
 
-        {/* User Mini Profile Box at bottom of Sidebar */}
-        <div className="p-3 border-t border-white/10 bg-[#0a0a0b]">
+        {/* User Mini Profile Box at bottom of Sidebar with Logout Action */}
+        <div className="p-3 border-t border-white/10 bg-[#0a0a0b] flex items-center gap-2">
           <div
-            onClick={() => setActiveRoute('my-area')}
-            className="flex items-center justify-between p-2.5 rounded-xl bg-[#121214] border border-white/5 hover:border-white/15 transition-all cursor-pointer group"
+            id="sidebar-user-profile-btn"
+            onClick={() => {
+              setActiveRoute('my-area');
+              setIsMobileNavOpen(false);
+            }}
+            className="flex-1 flex items-center justify-between p-2 rounded-xl bg-[#121214] border border-white/5 hover:border-white/15 transition-all cursor-pointer group min-w-0"
+            title="View My Area Telemetry"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow-sm">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow-sm shrink-0">
                 {getInitials(userProfile.name)}
               </div>
-              <div className="text-left">
-                <p className="text-xs font-bold text-white leading-tight truncate max-w-[130px]">
-                  {userProfile.name || 'Sonai ghosh'}
+              <div className="text-left min-w-0">
+                <p className="text-xs font-bold text-white leading-tight truncate">
+                  {userProfile.name || 'Operator'}
                 </p>
-                <p className="text-[10px] text-orange-400 flex items-center gap-1 font-mono mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                  <span>{userProfile.location.area || 'Khawzawl'}</span>
+                <p className="text-[10px] text-orange-400 flex items-center gap-1 font-mono mt-0.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shrink-0" />
+                  <span className="truncate">{userProfile.location.area || 'Active'}</span>
                 </p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
+            <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors shrink-0 ml-1" />
           </div>
+
+          {/* Quick Logout Button */}
+          <button
+            id="sidebar-logout-btn"
+            onClick={() => {
+              setIsMobileNavOpen(false);
+              logoutUser();
+            }}
+            className="p-2.5 rounded-xl bg-[#121214] border border-white/5 hover:border-red-500/40 hover:bg-red-950/30 text-gray-400 hover:text-red-400 transition-all cursor-pointer flex items-center justify-center shrink-0"
+            title="Log Out / Exit Session"
+            aria-label="Log Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </aside>
     </>

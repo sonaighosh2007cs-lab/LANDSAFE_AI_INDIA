@@ -8,6 +8,8 @@ import {
   RefreshCw,
   Layers,
   ChevronRight,
+  User,
+  LogOut,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MyAreaRiskFactorsCard } from '../components/myarea/MyAreaRiskFactorsCard';
@@ -25,6 +27,7 @@ export const MyAreaPage: React.FC = () => {
     riskScore,
     setIsLocationModalOpen,
     isAnalyzingLocation,
+    logoutUser,
   } = useApp();
 
   const [currentTimeStr, setCurrentTimeStr] = useState('');
@@ -163,6 +166,40 @@ export const MyAreaPage: React.FC = () => {
       {/* 7. DISTRICT EMERGENCY FIRST RESPONDER MATRIX */}
       {/* ========================================================================= */}
       <MyAreaEmergencyContacts location={location} />
+
+      {/* ========================================================================= */}
+      {/* 8. OPERATOR PROFILE & ACTIVE SESSION CONTROL */}
+      {/* ========================================================================= */}
+      <div className="bg-[#060e19] border border-[#14263c] rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center font-bold text-sm text-white shadow-md shrink-0">
+            {userProfile.name ? userProfile.name.slice(0, 2).toUpperCase() : 'OP'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">
+                {userProfile.name || 'Authenticated Operator'}
+              </h3>
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800">
+                Session Active
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 font-mono mt-0.5">
+              {userProfile.mobile || userProfile.email || 'operator@landsafe.ai'} • {userProfile.age ? `Age ${userProfile.age}` : userProfile.ageGroup}
+            </p>
+          </div>
+        </div>
+
+        <button
+          id="myarea-logout-btn"
+          type="button"
+          onClick={logoutUser}
+          className="px-4 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-400 hover:text-red-200 text-xs font-bold font-mono flex items-center gap-2 transition-all cursor-pointer shadow-md"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Log Out / Switch Account</span>
+        </button>
+      </div>
     </div>
   );
 };

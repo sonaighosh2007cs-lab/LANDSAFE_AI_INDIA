@@ -306,7 +306,7 @@ export async function fetchCompleteWeatherData(
   lat: number,
   lng: number,
   locationMeta: { area: string; district: string; state: string; elevation?: number },
-  aiClient: GoogleGenAI | null
+  aiClient: GoogleGenAI | null = null
 ): Promise<WeatherData> {
   const googleApiKey = process.env.GOOGLE_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
 
