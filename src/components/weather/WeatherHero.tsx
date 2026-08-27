@@ -198,56 +198,56 @@ export const WeatherHero: React.FC<WeatherHeroProps> = ({
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           {/* Rain Probability */}
           <div className="bg-[#071322]/80 backdrop-blur-sm border border-[#182f4c] rounded-2xl p-3.5 space-y-1">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[11px] font-mono uppercase tracking-wider">Rain Probability</span>
+            <div className="flex items-center justify-between text-slate-300">
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold">Rain Probability</span>
               <CloudRain className="w-4 h-4 text-sky-400" />
             </div>
-            <p className="text-xl font-black text-white font-mono">
+            <p className="text-xl sm:text-2xl font-black text-white font-mono">
               <AnimatedNumber value={current.precipitationProbability} decimals={0} suffix="%" />
             </p>
-            <p className="text-[10px] text-sky-400 font-mono truncate">
+            <p className="text-[11px] text-sky-400 font-mono truncate font-medium">
               {current.precipitation > 0 ? `${current.precipitation} mm/h active` : '0 mm/h current'}
             </p>
           </div>
 
           {/* Humidity */}
           <div className="bg-[#071322]/80 backdrop-blur-sm border border-[#182f4c] rounded-2xl p-3.5 space-y-1">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[11px] font-mono uppercase tracking-wider">Humidity</span>
+            <div className="flex items-center justify-between text-slate-300">
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold">Humidity</span>
               <Droplets className="w-4 h-4 text-blue-400" />
             </div>
-            <p className="text-xl font-black text-white font-mono">
+            <p className="text-xl sm:text-2xl font-black text-white font-mono">
               <AnimatedNumber value={current.humidity} decimals={0} suffix="%" />
             </p>
-            <p className="text-[10px] text-blue-400 font-mono">
+            <p className="text-[11px] text-blue-400 font-mono font-medium">
               Dew Pt {current.dewPoint}°C
             </p>
           </div>
 
           {/* Wind Speed */}
           <div className="bg-[#071322]/80 backdrop-blur-sm border border-[#182f4c] rounded-2xl p-3.5 space-y-1">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[11px] font-mono uppercase tracking-wider">Wind Speed</span>
+            <div className="flex items-center justify-between text-slate-300">
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold">Wind Speed</span>
               <Wind className="w-4 h-4 text-teal-400" />
             </div>
-            <p className="text-xl font-black text-white font-mono">
+            <p className="text-xl sm:text-2xl font-black text-white font-mono">
               <AnimatedNumber value={current.windSpeed} decimals={1} suffix=" km/h" />
             </p>
-            <p className="text-[10px] text-teal-400 font-mono">
+            <p className="text-[11px] text-teal-400 font-mono font-medium">
               From {current.windDirection} • Gust {current.windGust} km/h
             </p>
           </div>
 
           {/* UV Index */}
           <div className="bg-[#071322]/80 backdrop-blur-sm border border-[#182f4c] rounded-2xl p-3.5 space-y-1">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[11px] font-mono uppercase tracking-wider">UV Index</span>
+            <div className="flex items-center justify-between text-slate-300">
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold">UV Index</span>
               <Sun className="w-4 h-4 text-amber-400" />
             </div>
-            <p className="text-xl font-black text-white font-mono">
+            <p className="text-xl sm:text-2xl font-black text-white font-mono">
               <AnimatedNumber value={current.uvIndex} decimals={0} />
             </p>
-            <p className="text-[10px] text-amber-400 font-mono">
+            <p className="text-[11px] text-amber-400 font-mono font-medium">
               {current.uvDescription} Category
             </p>
           </div>
@@ -257,14 +257,14 @@ export const WeatherHero: React.FC<WeatherHeroProps> = ({
       {/* AI Weather Summary Ribbon */}
       {summary && (
         <div className="relative z-10 mt-6 pt-4 border-t border-[#182f4c] flex items-start gap-3 bg-[#071322]/60 rounded-2xl p-3.5 border border-[#162d49]">
-          <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shrink-0 text-sky-400 mt-0.5">
+          <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shrink-0 text-sky-400 mt-0.5">
             <Sparkles className="w-4 h-4" />
           </div>
-          <div className="space-y-0.5">
-            <span className="text-[10px] font-mono uppercase font-bold text-sky-400 tracking-wider">
+          <div className="space-y-1">
+            <span className="text-[11px] font-mono uppercase font-bold text-sky-400 tracking-wider">
               LandSafe Meteorological Intelligence Briefing
             </span>
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans">
+            <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-sans">
               {summary}
             </p>
           </div>

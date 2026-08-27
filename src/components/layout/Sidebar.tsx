@@ -97,8 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
         }`}
       >
         {/* Navigation Link List */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          <div className="px-3 pb-2 text-[10px] font-mono uppercase tracking-widest text-gray-500">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
+          <div className="px-3 pb-2 text-[11px] font-mono uppercase tracking-widest text-gray-400 font-semibold">
             Intelligence Modules
           </div>
 
@@ -111,10 +111,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
                 key={item.id}
                 id={`sidebar-link-${item.id}`}
                 onClick={() => handleNavClick(item.id)}
-                className={`interactive-nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer ${
+                className={`interactive-nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all group cursor-pointer ${
                   isActive
                     ? 'bg-white/5 text-orange-500 font-semibold border border-white/10 shadow-sm'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
                 <div className="flex items-center gap-1.5">
                   {item.badge && (
                     <span
-                      className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${item.badge.color}`}
+                      className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${item.badge.color}`}
                     >
                       {item.badge.text}
                     </span>
@@ -147,11 +147,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
           {/* System Status Widget */}
           <div className="pt-3 px-1">
             <div className="rounded-xl bg-gradient-to-br from-orange-600/20 to-transparent p-3.5 border border-orange-600/20">
-              <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-1">
+              <p className="text-[11px] uppercase tracking-widest text-orange-400 font-semibold mb-1">
                 System Status
               </p>
-              <p className="text-xs text-white">Real-time Analysis: Online</p>
-              <div className="mt-2 h-1 w-full bg-white/10 overflow-hidden rounded-full">
+              <p className="text-[13px] text-white">Real-time Analysis: Online</p>
+              <div className="mt-2 h-1.5 w-full bg-white/10 overflow-hidden rounded-full">
                 <div className="h-full w-4/5 bg-orange-500 rounded-full" />
               </div>
             </div>
@@ -174,10 +174,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
                 {getInitials(userProfile.name)}
               </div>
               <div className="text-left min-w-0">
-                <p className="text-xs font-bold text-white leading-tight truncate">
+                <p className="text-[13px] font-bold text-white leading-tight truncate">
                   {userProfile.name || 'Operator'}
                 </p>
-                <p className="text-[10px] text-orange-400 flex items-center gap-1 font-mono mt-0.5 truncate">
+                <p className="text-[11px] text-orange-400 flex items-center gap-1 font-mono mt-0.5 truncate">
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shrink-0" />
                   <span className="truncate">{userProfile.location.area || 'Active'}</span>
                 </p>

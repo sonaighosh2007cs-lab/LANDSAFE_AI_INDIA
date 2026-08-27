@@ -109,12 +109,12 @@ export const DashboardOverview: React.FC = () => {
       {/* ========================================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             Hello, {userProfile.name || 'Rishi'}
           </h1>
-          <p className="text-gray-400 text-sm mt-0.5">
+          <p className="text-gray-400 text-sm sm:text-base mt-0.5">
             Current Location:{' '}
-            <span className="text-orange-500 font-medium uppercase tracking-wide">
+            <span className="text-orange-500 font-semibold uppercase tracking-wide">
               {userProfile.location.area}, {userProfile.location.district} ({userProfile.location.state})
             </span>
           </p>
@@ -122,31 +122,31 @@ export const DashboardOverview: React.FC = () => {
 
         <div className="flex items-center gap-3 flex-wrap">
           <div className="text-right hidden sm:block">
-            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Risk Index</p>
-            <p className={`text-base font-bold ${riskTheme.text}`}>{riskTheme.label}</p>
+            <p className="text-[11px] text-gray-400 uppercase tracking-widest font-mono font-medium">Risk Index</p>
+            <p className={`text-base sm:text-lg font-bold ${riskTheme.text}`}>{riskTheme.label}</p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#121214] border border-white/10 text-xs font-mono text-gray-300 shadow-sm">
-            <Clock className="w-3.5 h-3.5 text-orange-400" />
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#121214] border border-white/10 text-xs sm:text-sm font-mono text-gray-200 shadow-sm">
+            <Clock className="w-4 h-4 text-orange-400" />
             <span>{currentTime || '08:06 PM'}</span>
           </div>
           <button
             onClick={() => detectAndApplyGpsLocation()}
             disabled={isDetectingGps}
-            className="interactive-btn px-3 py-1.5 rounded-xl bg-orange-950/50 hover:bg-orange-900/50 border border-orange-500/40 text-orange-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+            className="interactive-btn px-3.5 py-2 rounded-xl bg-orange-950/50 hover:bg-orange-900/50 border border-orange-500/40 text-orange-300 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
             title="Detect GPS location from device"
           >
             {isDetectingGps ? (
-              <Loader2 className="w-3.5 h-3.5 text-orange-400 animate-spin" />
+              <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
             ) : (
-              <Navigation className="w-3.5 h-3.5 text-orange-400" />
+              <Navigation className="w-4 h-4 text-orange-400" />
             )}
             <span className="hidden sm:inline">My Location</span>
           </button>
           <button
             onClick={() => setIsLocationModalOpen(true)}
-            className="interactive-btn px-3.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-[0_0_15px_rgba(234,88,12,0.3)]"
+            className="interactive-btn px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-[0_0_15px_rgba(234,88,12,0.3)]"
           >
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="w-4 h-4" />
             <span>Change Area</span>
           </button>
         </div>
@@ -160,44 +160,44 @@ export const DashboardOverview: React.FC = () => {
           {/* Left side details */}
           <div className="space-y-3 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
                 📍 {userProfile.location.area} ({userProfile.location.state})
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 text-gray-300 border border-white/10 text-[11px] font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 text-gray-200 border border-white/10 text-xs font-mono font-medium">
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
                 Live Telemetry
               </span>
               <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border ${riskTheme.badge}`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold border ${riskTheme.badge}`}
               >
                 ● {riskTheme.label} (<AnimatedNumber value={riskScore} suffix="%" />)
               </span>
             </div>
 
             {/* Geographical Parameters */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm font-mono pt-1">
               <div className="interactive-card bg-[#0a0a0b] p-3 rounded-xl border border-white/5 hover:border-orange-500/20">
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest block">Coordinates</span>
-                <span className="text-white font-bold flex items-center gap-1 truncate">
+                <span className="text-[11px] text-gray-400 uppercase tracking-widest block font-medium">Coordinates</span>
+                <span className="text-white font-bold flex items-center gap-1 truncate text-xs sm:text-sm mt-0.5">
                   <AnimatedNumber value={userProfile.location.coordinates.lat} decimals={3} />° N,{' '}
                   <AnimatedNumber value={userProfile.location.coordinates.lng} decimals={3} />° E
                 </span>
               </div>
               <div className="interactive-card bg-[#0a0a0b] p-3 rounded-xl border border-white/5 hover:border-orange-500/20">
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest block">Elevation</span>
-                <span className="text-white font-bold">
+                <span className="text-[11px] text-gray-400 uppercase tracking-widest block font-medium">Elevation</span>
+                <span className="text-white font-bold text-xs sm:text-sm mt-0.5 block">
                   <AnimatedNumber value={telemetry.elevation.value} suffix=" m ASL" />
                 </span>
               </div>
               <div className="interactive-card bg-[#0a0a0b] p-3 rounded-xl border border-white/5 hover:border-orange-500/20">
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest block">Slope Gradient</span>
-                <span className="text-white font-bold">
+                <span className="text-[11px] text-gray-400 uppercase tracking-widest block font-medium">Slope Gradient</span>
+                <span className="text-white font-bold text-xs sm:text-sm mt-0.5 block">
                   <AnimatedNumber value={telemetry.slopeAngle.value} decimals={1} suffix="° Incline" />
                 </span>
               </div>
               <div className="interactive-card bg-[#0a0a0b] p-3 rounded-xl border border-white/5 hover:border-orange-500/20">
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest block">Lithology</span>
-                <span className="text-orange-400 font-semibold truncate block">
+                <span className="text-[11px] text-gray-400 uppercase tracking-widest block font-medium">Lithology</span>
+                <span className="text-orange-400 font-semibold truncate block text-xs sm:text-sm mt-0.5">
                   {userProfile.location.lithology}
                 </span>
               </div>
@@ -208,9 +208,9 @@ export const DashboardOverview: React.FC = () => {
           <div className="flex flex-row lg:flex-col gap-2.5 shrink-0">
             <button
               onClick={() => setActiveRoute('ai-risk-engineering')}
-              className="interactive-btn flex-1 lg:flex-none px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-orange-500/50 hover:bg-white/10 text-xs font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="interactive-btn flex-1 lg:flex-none px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-orange-500/50 hover:bg-white/10 text-xs sm:text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
-              <Activity className="w-3.5 h-3.5 text-orange-400" />
+              <Activity className="w-4 h-4 text-orange-400" />
               <span>XAI Engineering</span>
             </button>
           </div>
@@ -224,34 +224,34 @@ export const DashboardOverview: React.FC = () => {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
                   AI Landslide Risk Score
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold uppercase">
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold uppercase">
                   Primary Telemetry Metric
                 </span>
               </div>
-              <p className="text-xs text-gray-400 font-mono">
+              <p className="text-xs sm:text-sm text-gray-400 font-mono mt-0.5">
                 Deep Geotechnical Neural Network • Continuous Multi-Parameter Risk Ingestion
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 border border-white/10">
+            <span className="text-xs font-mono px-3 py-1 rounded-lg bg-white/5 text-gray-300 border border-white/10 font-medium">
               Confidence: 98.4%
             </span>
             <button
               onClick={() => setActiveRoute('ai-risk-engineering')}
-              className="interactive-btn text-xs text-orange-400 hover:text-orange-300 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 px-3 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              className="interactive-btn text-xs sm:text-sm text-orange-400 hover:text-orange-300 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer"
             >
               <span>Explainable AI</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -260,7 +260,7 @@ export const DashboardOverview: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-6">
           {/* Left Column (5 cols): Prominent Centered Circular Risk Gauge */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center text-center lg:border-r lg:border-white/5 lg:pr-8">
-            <div className="relative w-44 h-44 sm:w-48 sm:h-48 flex items-center justify-center">
+            <div className="relative w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
                 <circle
                   cx="80"
@@ -285,10 +285,10 @@ export const DashboardOverview: React.FC = () => {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+                <span className="text-5xl sm:text-6xl font-black text-white tracking-tight">
                   <AnimatedNumber value={riskScore} suffix="%" />
                 </span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-gray-400 mt-1">
+                <span className="text-xs font-mono uppercase tracking-widest text-gray-400 mt-1 font-semibold">
                   Instability Index
                 </span>
               </div>
@@ -296,33 +296,33 @@ export const DashboardOverview: React.FC = () => {
 
             <div className="mt-3 flex flex-col items-center gap-1.5">
               <span
-                className={`text-xs font-mono font-bold px-3.5 py-1 rounded-full border ${riskTheme.badge}`}
+                className={`text-xs sm:text-sm font-mono font-bold px-4 py-1 rounded-full border ${riskTheme.badge}`}
               >
                 ● {riskTheme.label} ACTIVE ({riskDelta})
               </span>
-              <p className="text-[11px] text-gray-400 max-w-xs mt-1">
+              <p className="text-xs text-gray-400 max-w-xs mt-1 leading-relaxed">
                 Real-time geotechnical edge inference computed from slope dynamics, rainfall saturation, and soil pore metrics.
               </p>
             </div>
           </div>
 
           {/* Right Column (7 cols): Contributing Risk Factors */}
-          <div className="lg:col-span-7 space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-gray-400 pb-1 border-b border-white/5">
-              <span className="font-semibold text-gray-300">Contributing Geological Vectors</span>
-              <span>Relative Feature Weight</span>
+          <div className="lg:col-span-7 space-y-3.5">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-mono text-gray-400 pb-1 border-b border-white/5">
+              <span className="font-bold text-gray-200">Contributing Geological Vectors</span>
+              <span className="font-semibold text-gray-400">Relative Feature Weight</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5 pt-1">
               {contributingFactors.map((f, i) => (
-                <div key={i} className="space-y-1.5 bg-[#0a0a0b]/60 border border-white/5 p-3 rounded-xl hover:border-white/10 transition-colors">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-300 font-medium truncate">{f.name}</span>
-                    <span className="text-white font-mono font-bold shrink-0">
+                <div key={i} className="space-y-1.5 bg-[#0a0a0b]/60 border border-white/5 p-3.5 rounded-xl hover:border-white/10 transition-colors">
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-gray-200 font-medium truncate">{f.name}</span>
+                    <span className="text-white font-mono font-bold shrink-0 ml-1">
                       <AnimatedNumber value={f.val} suffix="%" />
                     </span>
                   </div>
-                  <div className="w-full h-2 bg-[#0a0a0b] rounded-full overflow-hidden border border-white/5">
+                  <div className="w-full h-2.5 bg-[#0a0a0b] rounded-full overflow-hidden border border-white/5">
                     <div
                       className={`h-full bg-gradient-to-r ${f.color} rounded-full transition-all duration-700`}
                       style={{ width: `${f.val}%` }}
@@ -335,7 +335,7 @@ export const DashboardOverview: React.FC = () => {
         </div>
 
         {/* Footer Bar */}
-        <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-gray-400">
+        <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm font-mono text-gray-400">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Edge Neural Inference Engine (SHAP Vectors active • 22ms latency)</span>
@@ -345,7 +345,7 @@ export const DashboardOverview: React.FC = () => {
             className="text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1 transition-colors cursor-pointer"
           >
             <span>Deep Geotechnical Analysis</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -365,9 +365,9 @@ export const DashboardOverview: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
-                <h3 className="text-sm font-bold text-white">Sensor Mesh & Local Telemetry</h3>
+                <h3 className="text-base font-bold text-white">Sensor Mesh & Local Telemetry</h3>
               </div>
-              <span className="text-[10px] font-mono text-gray-400">
+              <span className="text-[11px] font-mono text-gray-400 font-medium">
                 8 Real-Time IoT Nodes Connected
               </span>
             </div>
@@ -377,15 +377,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 1: Precipitation */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-blue-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Precipitation</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Precipitation</span>
                   <CloudRain className="w-4 h-4 text-blue-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.precipitation.value} decimals={1} />
-                    <span className="text-xs font-normal text-gray-500">mm</span>
+                    <span className="text-xs font-normal text-gray-400">mm</span>
                   </p>
-                  <p className="text-[10px] font-mono text-blue-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-blue-400 mt-0.5 truncate font-medium">
                     {telemetry.precipitation.intensity} Intensity
                   </p>
                 </div>
@@ -394,15 +394,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 2: Soil Moisture */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-cyan-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Soil Moisture</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Soil Moisture</span>
                   <Droplets className="w-4 h-4 text-cyan-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.soilMoisture.value} />
-                    <span className="text-xs font-normal text-gray-500">%</span>
+                    <span className="text-xs font-normal text-gray-400">%</span>
                   </p>
-                  <p className="text-[10px] font-mono text-cyan-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-cyan-400 mt-0.5 truncate font-medium">
                     {telemetry.soilMoisture.saturation}
                   </p>
                 </div>
@@ -411,15 +411,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 3: Slope Angle */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-amber-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Slope Angle</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Slope Angle</span>
                   <Compass className="w-4 h-4 text-amber-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.slopeAngle.value} decimals={1} />
-                    <span className="text-xs font-normal text-gray-500">°</span>
+                    <span className="text-xs font-normal text-gray-400">°</span>
                   </p>
-                  <p className="text-[10px] font-mono text-amber-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-amber-400 mt-0.5 truncate font-medium">
                     {telemetry.slopeAngle.gradient}
                   </p>
                 </div>
@@ -428,15 +428,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 4: Ground Displacement */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-red-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Displacement</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Displacement</span>
                   <Activity className="w-4 h-4 text-red-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.groundDisplacement.value} decimals={1} />
-                    <span className="text-xs font-normal text-gray-500">mm</span>
+                    <span className="text-xs font-normal text-gray-400">mm</span>
                   </p>
-                  <p className="text-[10px] font-mono text-red-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-red-400 mt-0.5 truncate font-medium">
                     {telemetry.groundDisplacement.rate}
                   </p>
                 </div>
@@ -445,15 +445,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 5: Elevation */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-emerald-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Elevation</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Elevation</span>
                   <Mountain className="w-4 h-4 text-emerald-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.elevation.value} />
-                    <span className="text-xs font-normal text-gray-500">m</span>
+                    <span className="text-xs font-normal text-gray-400">m</span>
                   </p>
-                  <p className="text-[10px] font-mono text-emerald-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-emerald-400 mt-0.5 truncate font-medium">
                     {telemetry.elevation.terrain}
                   </p>
                 </div>
@@ -462,15 +462,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 6: Temperature */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-orange-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Temperature</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Temperature</span>
                   <Thermometer className="w-4 h-4 text-orange-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.temperature.value} decimals={1} />
-                    <span className="text-xs font-normal text-gray-500">°C</span>
+                    <span className="text-xs font-normal text-gray-400">°C</span>
                   </p>
-                  <p className="text-[10px] font-mono text-orange-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-orange-400 mt-0.5 truncate font-medium">
                     {telemetry.temperature.condition}
                   </p>
                 </div>
@@ -479,15 +479,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 7: Humidity */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-teal-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Humidity</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Humidity</span>
                   <Wind className="w-4 h-4 text-teal-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.humidity.value} />
-                    <span className="text-xs font-normal text-gray-500">%</span>
+                    <span className="text-xs font-normal text-gray-400">%</span>
                   </p>
-                  <p className="text-[10px] font-mono text-teal-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-teal-400 mt-0.5 truncate font-medium">
                     Vapor Saturation
                   </p>
                 </div>
@@ -496,15 +496,15 @@ export const DashboardOverview: React.FC = () => {
               {/* Tile 8: Ground Condition / Pore Pressure */}
               <div className="interactive-card bg-[#0a0a0b] border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-purple-500/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-gray-400 truncate">Pore Pressure</span>
+                  <span className="text-xs font-semibold text-gray-300 truncate">Pore Pressure</span>
                   <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0" />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-bold text-white flex items-baseline gap-1">
+                  <p className="text-xl sm:text-2xl font-bold text-white flex items-baseline gap-1">
                     <AnimatedNumber value={telemetry.groundCondition.value} decimals={1} />
-                    <span className="text-xs font-normal text-gray-500">kPa</span>
+                    <span className="text-xs font-normal text-gray-400">kPa</span>
                   </p>
-                  <p className="text-[10px] font-mono text-purple-400 mt-0.5 truncate">
+                  <p className="text-[11px] font-mono text-purple-400 mt-0.5 truncate font-medium">
                     {telemetry.groundCondition.shearStress}
                   </p>
                 </div>
