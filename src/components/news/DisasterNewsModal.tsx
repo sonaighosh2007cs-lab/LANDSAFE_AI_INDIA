@@ -175,13 +175,15 @@ export const DisasterNewsModal: React.FC<DisasterNewsModalProps> = ({
               Close
             </button>
 
-            <button
-              onClick={handleOpenSource}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#009e60] hover:bg-[#00b870] transition-all shadow-lg cursor-pointer"
+            <a
+              href={article.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#009e60] hover:bg-[#00b870] transition-all shadow-lg cursor-pointer whitespace-nowrap"
             >
               <span>Read Full Article on {article.source.split(' ')[0]}</span>
               <ExternalLink className="w-4 h-4" />
-            </button>
+            </a>
           </div>
         </div>
       </div>

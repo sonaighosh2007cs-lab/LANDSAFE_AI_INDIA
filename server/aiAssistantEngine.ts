@@ -513,20 +513,34 @@ export async function processChatRequest(
       ],
     });
 
-    const response = await aiClient.models.generateContent({
-      model: 'gemini-3.7-flash',
-      contents,
-    });
+    const modelsToTry = ['gemini-3.7-flash', 'gemini-2.5-flash'];
+    for (const model of modelsToTry) {
+      try {
+        const response = await aiClient.models.generateContent({
+          model,
+          contents,
+        });
 
-    const reply = response.text || 'Analysis completed with current telemetry parameters.';
+        const reply = response.text;
+        if (reply && reply.trim().length > 0) {
+          return {
+            reply: reply.trim(),
+            source: model === 'gemini-3.7-flash' ? 'GEMINI_3_7_FLASH_LIVE' : 'GEMINI_2_5_FLASH_LIVE',
+            timestamp,
+          };
+        }
+      } catch {
+        // Continue to fallback model on temporary high demand / 503 status
+      }
+    }
 
+    const fallbackRes = generateDeterministicResponse(message, context);
     return {
-      reply,
-      source: 'GEMINI_3_7_FLASH_LIVE',
+      reply: fallbackRes.reply,
+      source: 'LANDSAFE_DYNAMIC_GEO_ENGINE',
       timestamp,
     };
   } catch (error: any) {
-    console.error('Gemini live generation failed, falling back to LandSafe engine:', error?.message || error);
     const fallbackRes = generateDeterministicResponse(message, context);
     return {
       reply: fallbackRes.reply,

@@ -250,13 +250,16 @@ export const DisasterNewsCard: React.FC<DisasterNewsCardProps> = ({
             <Share2 className="w-3.5 h-3.5" />
           </button>
 
-          <button
-            onClick={handleReadFull}
+          <a
+            href={article.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#0f2845] hover:bg-[#009e60] border border-[#1d426a] hover:border-[#00d492] px-3 py-1.5 rounded-lg transition-all shadow-sm cursor-pointer whitespace-nowrap"
           >
             <span>Read Full Article</span>
             <ExternalLink className="w-3.5 h-3.5" />
-          </button>
+          </a>
         </div>
       </div>
     </div>

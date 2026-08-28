@@ -282,19 +282,34 @@ Base it strictly on these real numbers:
 
 Do not fabricate any extra facts. Return ONLY the 2-sentence summary.`;
 
-      const aiPromise = ai.models.generateContent({
-        model: 'gemini-3.7-flash',
-        contents: prompt,
-      });
+      // Multi-model resilience: try primary model first, with fast fallback to secondary model on high load (503/429)
+      const modelsToTry = ['gemini-3.7-flash', 'gemini-2.5-flash'];
+      for (const model of modelsToTry) {
+        try {
+          const genPromise = ai.models
+            .generateContent({
+              model,
+              contents: prompt,
+            })
+            .catch(() => null);
 
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1800));
-      const res: any = await Promise.race([aiPromise, timeoutPromise]);
+          let timerId: any = null;
+          const timeoutPromise = new Promise<null>((resolve) => {
+            timerId = setTimeout(() => resolve(null), 3000);
+          });
 
-      if (res && res.text && res.text.trim().length > 10) {
-        return res.text.trim();
+          const res: any = await Promise.race([genPromise, timeoutPromise]);
+          if (timerId) clearTimeout(timerId);
+
+          if (res && res.text && res.text.trim().length > 10) {
+            return res.text.trim();
+          }
+        } catch {
+          // If a model is temporarily unavailable (e.g. 503 spike), continue to fallback model
+        }
       }
-    } catch (e) {
-      console.warn('Gemini weather summary generation timed out or failed, using structured fallback:', e);
+    } catch {
+      // Seamlessly downgrade to deterministic fallback summary
     }
   }
 
