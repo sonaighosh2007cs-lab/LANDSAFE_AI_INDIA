@@ -1,5 +1,6 @@
 import { UserLocation, UserProfile, AgeGroup } from '../types';
 import { DEFAULT_USER_LOCATION } from '../data/locations';
+import { supabase, isSupabaseConfigured, SupabaseProfile } from '../lib/supabase';
 
 export interface LocalAuthUser {
   id: string;
@@ -38,6 +39,22 @@ function saveLocalUsers(users: LocalAuthUser[]) {
   }
 }
 
+/**
+ * Helper to convert identifier to Supabase email
+ */
+function toSupabaseEmail(identifier: string, contactType?: 'mobile' | 'email'): string {
+  const clean = identifier.trim().toLowerCase();
+  if (clean.includes('@')) {
+    return clean;
+  }
+  const digits = clean.replace(/\D/g, '');
+  const mobileDigits = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+  return `mobile_${mobileDigits}@landsafe.internal`;
+}
+
+/**
+ * Unified Login with Supabase Auth + Fallback
+ */
 export async function clientLogin(
   identifier: string,
   password: string
@@ -49,8 +66,100 @@ export async function clientLogin(
   const clean = identifier.trim().toLowerCase();
   const digitsOnly = clean.replace(/\D/g, '');
   const normalizedMobile = digitsOnly.length === 12 && digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
+  const isEmail = clean.includes('@');
+  const supaEmail = toSupabaseEmail(clean, isEmail ? 'email' : 'mobile');
 
-  // 1. Try server-side authentication first
+  // 1. Try Supabase Auth First
+  if (isSupabaseConfigured) {
+    try {
+      const { data: supaAuth, error: supaError } = await supabase.auth.signInWithPassword({
+        email: supaEmail,
+        password,
+      });
+
+      if (!supaError && supaAuth.user) {
+        // Fetch profile from Supabase profiles table
+        let userLocation = DEFAULT_USER_LOCATION;
+        let userName = supaAuth.user.user_metadata?.full_name || supaAuth.user.user_metadata?.name || 'Operator';
+        let userAge = supaAuth.user.user_metadata?.age;
+        let userAgeGroup = supaAuth.user.user_metadata?.age_group || '18–24';
+
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', supaAuth.user.id)
+            .single();
+
+          if (profileData) {
+            userName = profileData.full_name || userName;
+            userAge = profileData.age || userAge;
+            userAgeGroup = profileData.age_group || userAgeGroup;
+            if (profileData.active_location) {
+              userLocation = profileData.active_location;
+            }
+          }
+        } catch (pErr) {
+          console.warn('Profile fetch notice:', pErr);
+        }
+
+        // Fetch user's saved locations
+        let savedLocs: UserLocation[] = [userLocation];
+        try {
+          const { data: savedData } = await supabase
+            .from('saved_locations')
+            .select('*')
+            .eq('user_id', supaAuth.user.id);
+
+          if (savedData && savedData.length > 0) {
+            savedLocs = savedData.map((s) => ({
+              area: s.area || 'Saved Area',
+              district: s.district || '',
+              state: s.state || '',
+              country: 'India',
+              latitude: Number(s.latitude) || 0,
+              longitude: Number(s.longitude) || 0,
+              coordinates: {
+                lat: Number(s.latitude) || 0,
+                lng: Number(s.longitude) || 0,
+              },
+              elevation: Number(s.elevation) || 350,
+              slopeAngle: Number(s.slope_angle) || 15,
+              lithology: s.lithology || 'Alluvium and Sedimentary Colluvium',
+              riskScore: Number(s.risk_score) || 35,
+              riskLevel: (s.risk_level || 'LOW') as any,
+              isHazardMonitored: Boolean(s.is_hazard_monitored),
+            }));
+          }
+        } catch (sErr) {
+          console.warn('Saved locations fetch notice:', sErr);
+        }
+
+        const sessionToken = supaAuth.session?.access_token || `supa_${Date.now()}`;
+        sessionStorage.setItem(SESSION_AUTH_KEY, sessionToken);
+
+        return {
+          success: true,
+          user: {
+            name: userName,
+            mobile: isEmail ? '' : normalizedMobile,
+            email: isEmail ? clean : '',
+            age: userAge,
+            ageGroup: userAgeGroup,
+            location: userLocation,
+            savedLocations: savedLocs,
+            onboarded: true,
+            registeredAt: supaAuth.user.created_at,
+          },
+          token: sessionToken,
+        };
+      }
+    } catch (supaNetErr) {
+      console.warn('Supabase Auth network attempt:', supaNetErr);
+    }
+  }
+
+  // 2. Try server-side authentication
   try {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
@@ -80,11 +189,11 @@ export async function clientLogin(
           },
           token: data.token,
         };
-      } else if (!data.success) {
+      } else if (!data.success && data.canForgotPassword) {
         return {
           success: false,
           error: data.error || 'Invalid login details.',
-          canForgotPassword: Boolean(data.canForgotPassword),
+          canForgotPassword: true,
         };
       }
     }
@@ -92,7 +201,7 @@ export async function clientLogin(
     console.warn('Backend login endpoint unavailable, checking local user registry:', netErr);
   }
 
-  // 2. Client-side local user registry fallback
+  // 3. Client-side local user registry fallback
   const localUsers = getLocalUsers();
   const found = localUsers.find((u) => {
     const uContact = u.contact.toLowerCase();
@@ -137,6 +246,9 @@ export async function clientLogin(
   };
 }
 
+/**
+ * Unified Registration with Supabase Auth + Supabase Tables + Fallbacks
+ */
 export async function clientRegister(data: {
   name: string;
   contact: string;
@@ -161,11 +273,71 @@ export async function clientRegister(data: {
       ? '45–54'
       : '55+';
 
-  // Save to client-side store
+  const supaEmail = toSupabaseEmail(cleanContact, contactType);
+
+  // 1. Register with Supabase Auth
+  let supaUserId: string | null = null;
+  if (isSupabaseConfigured) {
+    try {
+      const { data: supaAuth, error: supaError } = await supabase.auth.signUp({
+        email: supaEmail,
+        password,
+        options: {
+          data: {
+            full_name: name.trim(),
+            mobile: contactType === 'mobile' ? cleanContact : undefined,
+            age,
+            age_group: ageGroup,
+            location,
+          },
+        },
+      });
+
+      if (supaAuth?.user) {
+        supaUserId = supaAuth.user.id;
+
+        // Upsert to Supabase profiles table
+        try {
+          await supabase.from('profiles').upsert({
+            id: supaUserId,
+            full_name: name.trim(),
+            email: contactType === 'email' ? cleanContact : supaEmail,
+            mobile: contactType === 'mobile' ? cleanContact : null,
+            age,
+            age_group: ageGroup,
+            active_location: location,
+            updated_at: new Date().toISOString(),
+          });
+
+          // Insert into saved_locations table
+          if (location && location.coordinates) {
+            await supabase.from('saved_locations').insert({
+              user_id: supaUserId,
+              area: location.area,
+              district: location.district,
+              state: location.state,
+              latitude: location.coordinates[0],
+              longitude: location.coordinates[1],
+              elevation: location.elevation || 250,
+              slope_angle: location.slopeAngle || 14.5,
+              lithology: location.lithology || 'Metamorphic Complex',
+              is_primary: true,
+            });
+          }
+        } catch (dbErr) {
+          console.warn('Supabase profile/location sync notice:', dbErr);
+        }
+      }
+    } catch (supaErr) {
+      console.warn('Supabase sign-up notice (continuing with local & server resilience):', supaErr);
+    }
+  }
+
+  // 2. Save to client-side store
   const localUsers = getLocalUsers();
   const existingIdx = localUsers.findIndex((u) => u.contact.toLowerCase() === cleanContact);
   const newUserRecord: LocalAuthUser = {
-    id: `local_user_${Date.now()}`,
+    id: supaUserId || `local_user_${Date.now()}`,
     name: name.trim(),
     contact: cleanContact,
     contactType,
@@ -185,7 +357,7 @@ export async function clientRegister(data: {
   }
   saveLocalUsers(localUsers);
 
-  // Sync with server if available
+  // 3. Sync with server
   try {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
@@ -217,7 +389,7 @@ export async function clientRegister(data: {
       }
     }
   } catch (err) {
-    console.warn('Backend registration endpoint offline, using local registry:', err);
+    console.warn('Backend registration endpoint notice:', err);
   }
 
   const localToken = `tok_${Date.now()}`;
@@ -239,13 +411,25 @@ export async function clientRegister(data: {
   };
 }
 
+/**
+ * Unified Password Reset
+ */
 export async function clientResetPassword(
   identifier: string,
   newPassword: string
 ): Promise<{ success: boolean; error?: string; message?: string }> {
   const clean = identifier.trim().toLowerCase();
 
-  // Try server first
+  // Try Supabase Auth password reset if email
+  if (isSupabaseConfigured && clean.includes('@')) {
+    try {
+      await supabase.auth.resetPasswordForEmail(clean);
+    } catch (supaResetErr) {
+      console.warn('Supabase reset password notice:', supaResetErr);
+    }
+  }
+
+  // Try server
   try {
     const response = await fetch('/api/auth/forgot-password', {
       method: 'POST',
@@ -256,7 +440,7 @@ export async function clientResetPassword(
     if (contentType.includes('application/json')) {
       const data = await response.json();
       if (response.ok && data.success) {
-        // Also update local copy
+        // Update local copy
         const localUsers = getLocalUsers();
         const found = localUsers.find((u) => u.contact.toLowerCase() === clean);
         if (found) {
@@ -269,7 +453,7 @@ export async function clientResetPassword(
       }
     }
   } catch (e) {
-    console.warn('Backend reset password unavailable, updating local user:', e);
+    console.warn('Backend reset password notice:', e);
   }
 
   // Update local
@@ -294,6 +478,9 @@ export function clearClientSession() {
   try {
     sessionStorage.removeItem(SESSION_AUTH_KEY);
     sessionStorage.clear();
+    if (isSupabaseConfigured) {
+      supabase.auth.signOut().catch(() => {});
+    }
   } catch (e) {
     console.error('Error clearing session:', e);
   }

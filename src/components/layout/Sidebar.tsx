@@ -15,6 +15,8 @@ import {
   Shield,
   Activity,
   LogOut,
+  Calendar,
+  Database,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { AppRoute } from '../../types';
@@ -25,7 +27,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNavOpen }) => {
-  const { activeRoute, setActiveRoute, userProfile, logoutUser } = useApp();
+  const { activeRoute, setActiveRoute, userProfile, logoutUser, openAppointmentModal } = useApp();
 
   const navItems: {
     id: AppRoute;
@@ -143,6 +145,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
               </button>
             );
           })}
+
+          {/* Geotechnical Survey Booking Widget */}
+          <div className="pt-2 px-1">
+            <div className="rounded-xl bg-[#142033] p-3 border border-[#1e385a] flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-mono uppercase text-orange-400 font-bold flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 text-orange-400" />
+                  Site Consultation
+                </span>
+                <span className="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Supabase
+                </span>
+              </div>
+              <p className="text-[12px] text-slate-300 leading-snug">
+                Need an on-site geotechnical slope stability audit or sensor deployment?
+              </p>
+              <button
+                onClick={() => {
+                  setIsMobileNavOpen(false);
+                  openAppointmentModal();
+                }}
+                className="w-full py-1.5 px-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11.5px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <span>Book Site Survey</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
 
           {/* System Status Widget */}
           <div className="pt-3 px-1">

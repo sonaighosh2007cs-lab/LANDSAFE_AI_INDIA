@@ -22,7 +22,7 @@ import { WeatherAlertsBanner } from '../components/weather/WeatherAlertsBanner';
 import { LandSafeRiskImpactCard } from '../components/weather/LandSafeRiskImpactCard';
 import { LocationQuickSelectorModal } from '../components/weather/LocationQuickSelectorModal';
 import { UserLocation } from '../types';
-import { fetchValidatedWeather } from '../services/locationDataService';
+import { getLiveWeatherForLocation, subscribeToWeatherRealtime } from '../services/supabaseWeatherService';
 import { classifyWeatherError } from '../services/weatherClient';
 
 export const LiveWeatherPage: React.FC = () => {
@@ -73,7 +73,10 @@ export const LiveWeatherPage: React.FC = () => {
       abortControllerRef.current = new AbortController();
 
       try {
-        const data = await fetchValidatedWeather(loc, abortControllerRef.current.signal);
+        const data = await getLiveWeatherForLocation(loc, {
+          forceRefresh: isManualRefresh,
+          signal: abortControllerRef.current.signal,
+        });
         
         // Double check this response matches the current location
         if (
@@ -95,9 +98,22 @@ export const LiveWeatherPage: React.FC = () => {
     [userProfile.location]
   );
 
-  // Initial and reactive fetch on location change
+  // Initial and reactive fetch on location change + Realtime subscription
   useEffect(() => {
+    const loc = userProfile.location;
+    if (!loc || !loc.coordinates) return;
+
     fetchWeather();
+
+    // Set up Supabase Realtime subscription for live weather push updates
+    const unsubscribeRealtime = subscribeToWeatherRealtime(loc, (freshWeather) => {
+      if (
+        currentLocationRef.current.coordinates.lat === loc.coordinates.lat &&
+        currentLocationRef.current.coordinates.lng === loc.coordinates.lng
+      ) {
+        setWeatherData(freshWeather);
+      }
+    });
 
     // Auto-refresh interval (every 3 minutes)
     const interval = setInterval(() => {
@@ -106,11 +122,12 @@ export const LiveWeatherPage: React.FC = () => {
 
     return () => {
       clearInterval(interval);
+      unsubscribeRealtime();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [fetchWeather]);
+  }, [fetchWeather, userProfile.location]);
 
   const handleSelectLocation = async (newLoc: UserLocation) => {
     if (changeUserLocation) {

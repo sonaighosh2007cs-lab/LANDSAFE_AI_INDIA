@@ -10,11 +10,14 @@ import {
   Info,
   RotateCcw,
   Zap,
+  Calendar,
+  ChevronRight,
+  Database,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const AiRiskEngineeringPage: React.FC = () => {
-  const { userProfile, telemetry, riskScore } = useApp();
+  const { userProfile, telemetry, riskScore, openAppointmentModal } = useApp();
 
   // Geotechnical Slider parameters
   const [cohesion, setCohesion] = useState(25); // kPa (effective cohesion c')
@@ -211,8 +214,15 @@ export const AiRiskEngineeringPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[#14263c] text-[11px] text-slate-400">
-            Model: Mohr-Coulomb failure criterion combined with InSAR surface creep training embeddings.
+          <div className="pt-3 border-t border-[#14263c] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
+            <span>Model: Mohr-Coulomb failure criterion combined with InSAR surface creep training embeddings.</span>
+            <button
+              onClick={() => openAppointmentModal('Geotechnical Slope Stability & FoS Audit')}
+              className="px-3.5 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold font-mono text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Schedule In-Situ Audit</span>
+            </button>
           </div>
         </div>
       </div>

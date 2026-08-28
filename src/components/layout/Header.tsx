@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Loader2,
   LogOut,
+  Calendar,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { SimulationScenario } from '../../types';
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
     setScenario,
     setIsLocationModalOpen,
     setIsNotificationDrawerOpen,
+    openAppointmentModal,
     logoutUser,
     setActiveRoute,
     isDetectingGps,
@@ -213,6 +215,16 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
             )}
           </div>
 
+          {/* Book Geotechnical Site Survey Button */}
+          <button
+            id="header-book-survey-btn"
+            onClick={() => openAppointmentModal()}
+            className="interactive-btn hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/30 hover:border-orange-500/60 hover:bg-orange-500/20 text-[12.5px] font-semibold text-orange-400 transition-all cursor-pointer shadow-sm"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Book Site Survey</span>
+          </button>
+
           {/* Notification Bell with Red Badge */}
           <button
             id="header-notification-bell"
@@ -274,6 +286,17 @@ export const Header: React.FC<HeaderProps> = ({ isMobileNavOpen, setIsMobileNavO
                 >
                   <Sliders className="w-3.5 h-3.5 text-cyan-400" />
                   <span>Switch Monitoring Sector</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsProfileDropdownOpen(false);
+                    openAppointmentModal();
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Book Site Survey & Audit</span>
                 </button>
 
                 <div className="my-1 border-t border-white/5" />

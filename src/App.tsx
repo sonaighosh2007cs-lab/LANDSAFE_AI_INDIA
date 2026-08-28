@@ -7,6 +7,7 @@ import { FloatingAiAgent } from './components/layout/FloatingAiAgent';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { LocationSelectorModal } from './components/modals/LocationSelectorModal';
 import { NotificationDrawer } from './components/modals/NotificationDrawer';
+import { AppointmentBookingModal } from './components/modals/AppointmentBookingModal';
 import { LocationAnalysisLoader } from './components/common/LocationAnalysisLoader';
 
 // Route pages
@@ -23,7 +24,15 @@ import { GsiHistoricalAnalysisPage } from './pages/GsiHistoricalAnalysisPage';
 import { DataPipelinesPage } from './pages/DataPipelinesPage';
 
 const MainLayout: React.FC = () => {
-  const { activeRoute, isOnboardingComplete, isAnalyzingLocation, analyzingLocationName } = useApp();
+  const {
+    activeRoute,
+    isOnboardingComplete,
+    isAnalyzingLocation,
+    analyzingLocationName,
+    isAppointmentModalOpen,
+    setIsAppointmentModalOpen,
+    appointmentServiceType,
+  } = useApp();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // If user hasn't completed the onboarding flow yet, render the onboarding setup
@@ -94,6 +103,11 @@ const MainLayout: React.FC = () => {
       {/* Global Modals & Drawers */}
       <LocationSelectorModal />
       <NotificationDrawer />
+      <AppointmentBookingModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+        defaultServiceType={appointmentServiceType}
+      />
       <FloatingAiAgent />
     </div>
   );

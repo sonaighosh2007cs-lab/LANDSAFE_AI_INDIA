@@ -124,6 +124,82 @@ export const DataPipelinesPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Supabase Backend Database Mesh */}
+      <div className="bg-[#091626] border border-[#182f4d] rounded-2xl p-5 shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Database className="w-4 h-4 text-emerald-400" />
+            Supabase PostgreSQL Cloud Backend & Microservices
+          </h3>
+          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 flex items-center gap-1">
+            <CheckCircle className="w-3 h-3 text-emerald-400" /> Connected (vzaphfmwjjcoiaafmrbh)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+          {[
+            {
+              table: 'appointments',
+              purpose: 'Geotechnical on-site audit & slope inspection booking records',
+              rls: 'Active RLS (User insert/read)',
+              status: 'READY',
+            },
+            {
+              table: 'profiles',
+              purpose: 'User accounts, role bindings, contact info & preferences',
+              rls: 'Active RLS (User CRUD)',
+              status: 'READY',
+            },
+            {
+              table: 'saved_locations',
+              purpose: 'Saved geographic surveillance zones & coordinates',
+              rls: 'Active RLS (User CRUD)',
+              status: 'READY',
+            },
+            {
+              table: 'disaster_news',
+              purpose: 'Real-time India extreme weather & natural disaster cache',
+              rls: 'Public read / Admin write',
+              status: 'READY',
+            },
+            {
+              table: 'weather_data',
+              purpose: 'Open-Meteo & IMD radar sensor stream persistence',
+              rls: 'Public read / System write',
+              status: 'READY',
+            },
+            {
+              table: 'risk_data',
+              purpose: 'AI geotechnical factor of safety & hazard ranking logs',
+              rls: 'Public read / System write',
+              status: 'READY',
+            },
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className="bg-[#060e19] border border-[#14263c] rounded-xl p-3.5 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono font-bold text-orange-400 text-[11px]">
+                    public.{item.table}
+                  </span>
+                  <span className="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    {item.status}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mb-2 leading-relaxed">
+                  {item.purpose}
+                </p>
+              </div>
+              <span className="text-[10px] font-mono text-slate-400 border-t border-[#12243a] pt-1.5 block">
+                {item.rls}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

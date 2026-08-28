@@ -127,13 +127,13 @@ export const LocationQuickSelectorModal: React.FC<LocationQuickSelectorModalProp
           </button>
         </div>
 
-        {/* Search input */}
-        <div className="p-4 border-b border-[#14263c] bg-[#060e19]">
+        {/* Search input & Quick Preset Chips */}
+        <div className="p-4 border-b border-[#14263c] bg-[#060e19] space-y-3">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search e.g. Darjeeling, Shimla, Wayanad, Mumbai, Gangtok, Shillong..."
+              placeholder="Search e.g. Kolkata, Darjeeling, Shillong, Gangtok, Shimla..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-[#091626] border border-[#1b385a] rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors"
@@ -148,6 +148,40 @@ export const LocationQuickSelectorModal: React.FC<LocationQuickSelectorModalProp
                 Clear
               </button>
             )}
+          </div>
+
+          {/* Preset Location Quick Chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-mono text-slate-400 mr-1">Quick Telemetry:</span>
+            {[
+              { area: 'Kolkata Center', dist: 'Kolkata', st: 'West Bengal', lat: 22.5726, lng: 88.3639, elev: 9, slope: 1.5, lith: 'Gangetic Silt', score: 8 },
+              { area: 'Darjeeling Town', dist: 'Darjeeling', st: 'West Bengal', lat: 27.036, lng: 88.2627, elev: 2042, slope: 32.0, lith: 'Darjeeling Gneiss', score: 82 },
+              { area: 'Shillong Peak Corridor', dist: 'East Khasi Hills', st: 'Meghalaya', lat: 25.5788, lng: 91.8933, elev: 1525, slope: 32.0, lith: 'Shillong Quartzite', score: 85 },
+              { area: 'Gangtok Capital District', dist: 'Gangtok', st: 'Sikkim', lat: 27.3389, lng: 88.6065, elev: 1650, slope: 28.5, lith: 'Daling Phyllite', score: 76 },
+              { area: 'Summer Hill', dist: 'Shimla', st: 'Himachal Pradesh', lat: 31.1048, lng: 77.1734, elev: 2206, slope: 30.5, lith: 'Jutogh Metasediments', score: 61 },
+              { area: 'Meppadi', dist: 'Wayanad', st: 'Kerala', lat: 11.6854, lng: 76.132, elev: 780, slope: 34.0, lith: 'Charnockite Overburden', score: 89 },
+            ].map((preset, idx) => (
+              <button
+                key={idx}
+                onClick={() =>
+                  handlePick({
+                    stateName: preset.st,
+                    districtName: preset.dist,
+                    areaName: preset.area,
+                    coordinates: { lat: preset.lat, lng: preset.lng },
+                    elevation: preset.elev,
+                    slopeAngle: preset.slope,
+                    lithology: preset.lith,
+                    riskScore: preset.score,
+                    isHazardMonitored: preset.score > 30,
+                  })
+                }
+                className="px-2.5 py-1 rounded-lg text-xs font-mono bg-[#0c1f36] hover:bg-[#132f50] border border-[#1b385a] hover:border-sky-400 text-sky-300 transition-all cursor-pointer"
+                id={`preset-chip-${idx}`}
+              >
+                📍 {preset.area.replace(' Capital District', '').replace(' Center', '').replace(' Town', '')}
+              </button>
+            ))}
           </div>
         </div>
 

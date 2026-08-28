@@ -70,6 +70,10 @@ interface AppContextType {
   activeAdvisory: ActiveAdvisory;
   isLocationModalOpen: boolean;
   setIsLocationModalOpen: (open: boolean) => void;
+  isAppointmentModalOpen: boolean;
+  setIsAppointmentModalOpen: (open: boolean) => void;
+  openAppointmentModal: (serviceType?: string) => void;
+  appointmentServiceType: string;
   isNotificationDrawerOpen: boolean;
   setIsNotificationDrawerOpen: (open: boolean) => void;
   isAiAgentOpen: boolean;
@@ -116,9 +120,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeRoute, setActiveRoute] = useState<AppRoute>('dashboard');
   const [scenario, setScenario] = useState<SimulationScenario>('MONSOON_SURGE');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [appointmentServiceType, setAppointmentServiceType] = useState('Geotechnical Slope Stability & FoS Audit');
   const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
   const [isAiAgentOpen, setIsAiAgentOpen] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
+
+  const openAppointmentModal = (serviceType?: string) => {
+    if (serviceType) {
+      setAppointmentServiceType(serviceType);
+    }
+    setIsAppointmentModalOpen(true);
+  };
 
   // Dynamic Loading / Analyzing state during onboarding or location change
   const [isAnalyzingLocation, setIsAnalyzingLocation] = useState(false);
@@ -516,6 +529,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeAdvisory,
         isLocationModalOpen,
         setIsLocationModalOpen,
+        isAppointmentModalOpen,
+        setIsAppointmentModalOpen,
+        openAppointmentModal,
+        appointmentServiceType,
         isNotificationDrawerOpen,
         setIsNotificationDrawerOpen,
         isAiAgentOpen,

@@ -10,6 +10,9 @@ import {
   ChevronRight,
   User,
   LogOut,
+  Calendar,
+  Database,
+  Building2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MyAreaRiskFactorsCard } from '../components/myarea/MyAreaRiskFactorsCard';
@@ -26,6 +29,7 @@ export const MyAreaPage: React.FC = () => {
     telemetry,
     riskScore,
     setIsLocationModalOpen,
+    openAppointmentModal,
     isAnalyzingLocation,
     logoutUser,
   } = useApp();
@@ -168,7 +172,46 @@ export const MyAreaPage: React.FC = () => {
       <MyAreaEmergencyContacts location={location} />
 
       {/* ========================================================================= */}
-      {/* 8. OPERATOR PROFILE & ACTIVE SESSION CONTROL */}
+      {/* 8. ON-SITE GEOTECHNICAL SITE SURVEY & HAZARD AUDIT (SUPABASE INTEGRATED) */}
+      {/* ========================================================================= */}
+      <div className="bg-gradient-to-r from-[#0c1829] via-[#0f213a] to-[#0c1829] border border-orange-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/30 flex items-center gap-1.5 uppercase">
+                <Calendar className="w-3 h-3" /> Field Inspection Dispatch
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                <Database className="w-3 h-3" /> Supabase Backend Sync
+              </span>
+            </div>
+
+            <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              Request On-Site Geotechnical Survey for {location.area}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Schedule a certified field team for slope stability audit (Factor of Safety), borehole core testing, inclinometer installation, or post-slide debris vulnerability inspection. All requests are logged directly to the Supabase database.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => openAppointmentModal('Geotechnical Slope Stability & FoS Audit')}
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold font-mono flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-500/25 hover:scale-105"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Book Slope Survey</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 9. OPERATOR PROFILE & ACTIVE SESSION CONTROL */}
       {/* ========================================================================= */}
       <div className="bg-[#060e19] border border-[#14263c] rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

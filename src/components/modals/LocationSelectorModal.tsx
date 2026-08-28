@@ -42,18 +42,18 @@ export const LocationSelectorModal: React.FC = () => {
     currentStateObj.districts[0];
 
   const quickSectors = [
+    { area: 'Kolkata Center', district: 'Kolkata', state: 'West Bengal', stateId: 'west_bengal', distId: 'kolkata', risk: 8, tag: 'Gangetic Plains', region: 'East India' },
+    { area: 'Darjeeling Town', district: 'Darjeeling', state: 'West Bengal', stateId: 'west_bengal', distId: 'darjeeling', risk: 82, tag: 'Himalayan Ridge', region: 'East Himalaya' },
+    { area: 'Shillong Peak Corridor', district: 'East Khasi Hills', state: 'Meghalaya', stateId: 'meghalaya', distId: 'east_khasi_hills', risk: 85, tag: 'High Rainfall', region: 'Northeast' },
+    { area: 'Gangtok Capital District', district: 'Gangtok', state: 'Sikkim', stateId: 'sikkim', distId: 'gangtok', risk: 76, tag: 'Eastern Himalayas', region: 'Sikkim' },
     { area: 'Khawzawl', district: 'Champhai', state: 'Mizoram', stateId: 'mizoram', distId: 'champhai', risk: 28, tag: 'Nominal', region: 'Northeast' },
     { area: 'Meppadi', district: 'Wayanad', state: 'Kerala', stateId: 'kerala', distId: 'wayanad', risk: 89, tag: 'Critical Alert', region: 'Western Ghats' },
-    { area: 'Kurseong', district: 'Darjeeling', state: 'West Bengal', stateId: 'west_bengal', distId: 'darjeeling', risk: 68, tag: 'Elevated Hazard', region: 'East Himalaya' },
     { area: 'Joshimath', district: 'Chamoli', state: 'Uttarakhand', stateId: 'uttarakhand', distId: 'chamoli', risk: 82, tag: 'Subsidence Zone', region: 'West Himalaya' },
     { area: 'Summer Hill', district: 'Shimla', state: 'Himachal Pradesh', stateId: 'himachal_pradesh', distId: 'shimla', risk: 61, tag: 'Slope Watch', region: 'North Himalaya' },
     { area: 'Mahad', district: 'Raigad', state: 'Maharashtra', stateId: 'maharashtra', distId: 'raigad', risk: 76, tag: 'Ghat Hazard', region: 'Western Ghats' },
     { area: 'Ooty Town', district: 'The Nilgiris', state: 'Tamil Nadu', stateId: 'tamil_nadu', distId: 'nilgiris', risk: 63, tag: 'Active Watch', region: 'Nilgiri Biosphere' },
     { area: 'Madikeri', district: 'Kodagu (Coorg)', state: 'Karnataka', stateId: 'karnataka', distId: 'kodagu', risk: 57, tag: 'Moderate Risk', region: 'Western Ghats' },
-    { area: 'Cherrapunji', district: 'East Khasi Hills', state: 'Meghalaya', stateId: 'meghalaya', distId: 'east_khasi', risk: 72, tag: 'High Rainfall', region: 'Northeast' },
-    { area: 'Mangan', district: 'North Sikkim', state: 'Sikkim', stateId: 'sikkim', distId: 'north_sikkim', risk: 79, tag: 'Glacial Corridor', region: 'East Himalaya' },
-    { area: 'Ramban', district: 'Ramban', state: 'Jammu & Kashmir', stateId: 'jk', distId: 'ramban', risk: 84, tag: 'NH-44 Slips', region: 'Pir Panjal' },
-    { area: 'Kohima Town', district: 'Kohima', state: 'Nagaland', stateId: 'nagaland', distId: 'kohima', risk: 59, tag: 'Debris Flow', region: 'Naga Hills' },
+    { area: 'Ramban', district: 'Ramban', state: 'Jammu & Kashmir', stateId: 'jammu_kashmir', distId: 'ramban', risk: 84, tag: 'NH-44 Slips', region: 'Pir Panjal' },
   ];
 
   const handleSelectQuick = async (s: (typeof quickSectors)[0]) => {
