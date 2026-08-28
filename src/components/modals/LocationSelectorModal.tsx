@@ -127,8 +127,8 @@ export const LocationSelectorModal: React.FC = () => {
                 </p>
                 <p className="text-[10px] text-slate-300">
                   {isDetectingGps
-                    ? 'Retrieving device coordinates & reverse geocoding locality...'
-                    : 'Get real-time device coordinates and reverse geocode exact area/town name'}
+                    ? 'Retrieving coordinates and detecting locality...'
+                    : 'Get real-time device coordinates to detect your exact district & town'}
                 </p>
               </div>
             </div>

@@ -507,7 +507,44 @@ AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- ==============================================================================
--- 14. Realtime Publication Setup (Enables Supabase WebSocket Subscriptions)
+-- 14. Login Activity & Security Audit Table
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.login_activity (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    user_name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    login_method TEXT NOT NULL, -- 'PHONE_AUTH', 'EMAIL_AUTH', 'NEW_REGISTRATION', 'SESSION_RESTORE'
+    selected_area TEXT,
+    district TEXT,
+    state TEXT,
+    status TEXT DEFAULT 'SUCCESS',
+    login_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_activity_user_id ON public.login_activity(user_id);
+CREATE INDEX IF NOT EXISTS idx_login_activity_login_at ON public.login_activity(login_at DESC);
+CREATE INDEX IF NOT EXISTS idx_login_activity_method ON public.login_activity(login_method);
+CREATE INDEX IF NOT EXISTS idx_login_activity_district ON public.login_activity(district, state);
+
+ALTER TABLE public.login_activity ENABLE ROW LEVEL SECURITY;
+
+-- Allow inserting login activities
+DROP POLICY IF EXISTS "Allow insert into login_activity" ON public.login_activity;
+CREATE POLICY "Allow insert into login_activity"
+ON public.login_activity FOR INSERT
+WITH CHECK (true);
+
+-- Allow reading login activities
+DROP POLICY IF EXISTS "Allow select login_activity" ON public.login_activity;
+CREATE POLICY "Allow select login_activity"
+ON public.login_activity FOR SELECT
+USING (true);
+
+-- ==============================================================================
+-- 15. Realtime Publication Setup (Enables Supabase WebSocket Subscriptions)
 -- ==============================================================================
 DO $$
 BEGIN
@@ -531,6 +568,13 @@ BEGIN
         WHERE pubname = 'supabase_realtime' AND tablename = 'risk_data'
     ) THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.risk_data;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'login_activity'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.login_activity;
     END IF;
 EXCEPTION
     WHEN OTHERS THEN

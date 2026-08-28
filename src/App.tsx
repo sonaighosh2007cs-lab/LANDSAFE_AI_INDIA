@@ -8,6 +8,7 @@ import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { LocationSelectorModal } from './components/modals/LocationSelectorModal';
 import { NotificationDrawer } from './components/modals/NotificationDrawer';
 import { AppointmentBookingModal } from './components/modals/AppointmentBookingModal';
+import { AdminLoginActivityModal } from './components/modals/AdminLoginActivityModal';
 import { LocationAnalysisLoader } from './components/common/LocationAnalysisLoader';
 
 // Route pages
@@ -32,6 +33,8 @@ const MainLayout: React.FC = () => {
     isAppointmentModalOpen,
     setIsAppointmentModalOpen,
     appointmentServiceType,
+    isLoginActivityModalOpen,
+    setIsLoginActivityModalOpen,
   } = useApp();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
@@ -107,6 +110,10 @@ const MainLayout: React.FC = () => {
         isOpen={isAppointmentModalOpen}
         onClose={() => setIsAppointmentModalOpen(false)}
         defaultServiceType={appointmentServiceType}
+      />
+      <AdminLoginActivityModal
+        isOpen={isLoginActivityModalOpen}
+        onClose={() => setIsLoginActivityModalOpen(false)}
       />
       <FloatingAiAgent />
     </div>

@@ -165,8 +165,8 @@ export const DisasterNewsPage: React.FC = () => {
     }
     if (timeframe === 'my-location') {
       return {
-        title: `No local disaster bulletins found for ${location.area || location.district}, ${location.state}.`,
-        subtitle: 'Local area stations and regional SDRF units report nominal conditions without major disruption.',
+        title: 'No recent disaster news found for your selected location.',
+        subtitle: `No disaster or extreme-weather bulletins found for ${location.area || location.district}, ${location.state}. Try checking again later for new local disaster updates.`,
       };
     }
     return {

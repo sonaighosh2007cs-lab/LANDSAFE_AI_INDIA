@@ -34,6 +34,7 @@ import {
   getNextLocationRequestId,
   getCurrentLocationRequestId,
 } from '../services/geolocationService';
+import { recordSuccessfulLogin } from '../services/loginActivityService';
 
 interface AppContextType {
   userProfile: UserProfile;
@@ -74,6 +75,9 @@ interface AppContextType {
   setIsAppointmentModalOpen: (open: boolean) => void;
   openAppointmentModal: (serviceType?: string) => void;
   appointmentServiceType: string;
+  isLoginActivityModalOpen: boolean;
+  setIsLoginActivityModalOpen: (open: boolean) => void;
+  openLoginActivityModal: () => void;
   isNotificationDrawerOpen: boolean;
   setIsNotificationDrawerOpen: (open: boolean) => void;
   isAiAgentOpen: boolean;
@@ -122,6 +126,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [appointmentServiceType, setAppointmentServiceType] = useState('Geotechnical Slope Stability & FoS Audit');
+  const [isLoginActivityModalOpen, setIsLoginActivityModalOpen] = useState(false);
   const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
   const [isAiAgentOpen, setIsAiAgentOpen] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
@@ -131,6 +136,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAppointmentServiceType(serviceType);
     }
     setIsAppointmentModalOpen(true);
+  };
+
+  const openLoginActivityModal = () => {
+    setIsLoginActivityModalOpen(true);
   };
 
   // Dynamic Loading / Analyzing state during onboarding or location change
@@ -254,11 +263,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAnalyzingLocation(false);
   };
 
-  // Real-time GPS Location Detection with Device Geolocation API & Reverse Geocoding
+  // Real-time GPS Location Detection with Device Geolocation API
   const detectAndApplyGpsLocation = async (): Promise<UserLocation | null> => {
     const reqId = getNextLocationRequestId();
     setIsDetectingGps(true);
-    setGpsStatusText('Detecting your location...');
+    setGpsStatusText('Locating...');
     setGpsError(null);
 
     try {
@@ -270,9 +279,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return null;
       }
 
-      setGpsStatusText('Reverse geocoding area name...');
+      setGpsStatusText('Fetching locality...');
 
-      // 2. Reverse geocode to exact locality name following: Locality -> City/Town -> District -> State
+      // 2. Resolve to exact locality name following: Locality -> City/Town -> District -> State
       const geoResult = await reverseGeocodeCoordinates(latitude, longitude);
 
       if (reqId !== getCurrentLocationRequestId()) {
@@ -299,7 +308,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       if (reqId === getCurrentLocationRequestId()) {
         setIsDetectingGps(false);
-        setGpsStatusText('Detecting your location...');
+        setGpsStatusText('Locating...');
       }
     }
   };
@@ -320,6 +329,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserProfile(fullProfile);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(fullProfile));
     setActiveRoute('dashboard');
+
+    // Secure audit log
+    recordSuccessfulLogin({
+      userId: profile.id,
+      userName: fullProfile.name,
+      phone: fullProfile.mobile,
+      email: fullProfile.email,
+      loginMethod: fullProfile.email ? 'EMAIL_AUTH' : 'PHONE_AUTH',
+      location: fullProfile.location,
+    }).catch((err) => console.warn('Non-blocking login record notice:', err));
 
     await new Promise((resolve) => setTimeout(resolve, 750));
     setIsAnalyzingLocation(false);
@@ -391,6 +410,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Reset modals & drawer states
     setIsLocationModalOpen(false);
+    setIsAppointmentModalOpen(false);
+    setIsLoginActivityModalOpen(false);
     setIsNotificationDrawerOpen(false);
     setIsAiAgentOpen(false);
     setIsAnalyzingLocation(false);
@@ -533,6 +554,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsAppointmentModalOpen,
         openAppointmentModal,
         appointmentServiceType,
+        isLoginActivityModalOpen,
+        setIsLoginActivityModalOpen,
+        openLoginActivityModal,
         isNotificationDrawerOpen,
         setIsNotificationDrawerOpen,
         isAiAgentOpen,

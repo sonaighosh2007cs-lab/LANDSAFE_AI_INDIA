@@ -108,3 +108,20 @@ export interface SupabaseRiskRecord {
   scenario: string;
   recorded_at?: string;
 }
+
+export interface SupabaseLoginActivity {
+  id?: string;
+  user_id?: string | null;
+  user_name: string;
+  phone?: string | null;
+  email?: string | null;
+  login_method: string;
+  selected_area?: string | null;
+  district?: string | null;
+  state?: string | null;
+  status?: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  login_at?: string;
+  created_at?: string;
+}

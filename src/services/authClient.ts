@@ -1,6 +1,7 @@
 import { UserLocation, UserProfile, AgeGroup } from '../types';
 import { DEFAULT_USER_LOCATION } from '../data/locations';
 import { supabase, isSupabaseConfigured, SupabaseProfile } from '../lib/supabase';
+import { recordSuccessfulLogin } from './loginActivityService';
 
 export interface LocalAuthUser {
   id: string;
@@ -138,6 +139,16 @@ export async function clientLogin(
         const sessionToken = supaAuth.session?.access_token || `supa_${Date.now()}`;
         sessionStorage.setItem(SESSION_AUTH_KEY, sessionToken);
 
+        // Record secure login activity in Supabase audit table
+        recordSuccessfulLogin({
+          userId: supaAuth.user.id,
+          userName,
+          phone: isEmail ? undefined : normalizedMobile,
+          email: isEmail ? clean : supaAuth.user.email,
+          loginMethod: isEmail ? 'EMAIL_AUTH' : 'PHONE_AUTH',
+          location: userLocation,
+        }).catch((err) => console.warn('Non-blocking login activity log notice:', err));
+
         return {
           success: true,
           user: {
@@ -174,6 +185,17 @@ export async function clientLogin(
         if (data.token) {
           sessionStorage.setItem(SESSION_AUTH_KEY, data.token);
         }
+
+        // Record login activity
+        recordSuccessfulLogin({
+          userId: data.user.id,
+          userName: data.user.name,
+          phone: data.user.mobile,
+          email: data.user.email,
+          loginMethod: isEmail ? 'EMAIL_AUTH' : 'PHONE_AUTH',
+          location: data.user.location || DEFAULT_USER_LOCATION,
+        }).catch((err) => console.warn('Non-blocking login activity log notice:', err));
+
         return {
           success: true,
           user: {
@@ -215,6 +237,17 @@ export async function clientLogin(
     if (found.password && found.password === password) {
       const sessionToken = `tok_${Date.now()}`;
       sessionStorage.setItem(SESSION_AUTH_KEY, sessionToken);
+
+      // Record login activity
+      recordSuccessfulLogin({
+        userId: found.id,
+        userName: found.name,
+        phone: found.mobile,
+        email: found.email,
+        loginMethod: found.contactType === 'email' ? 'EMAIL_AUTH' : 'PHONE_AUTH',
+        location: found.location || DEFAULT_USER_LOCATION,
+      }).catch((err) => console.warn('Non-blocking login activity log notice:', err));
+
       return {
         success: true,
         user: {
@@ -371,6 +404,17 @@ export async function clientRegister(data: {
         if (sData.token) {
           sessionStorage.setItem(SESSION_AUTH_KEY, sData.token);
         }
+
+        // Record initial registration login activity
+        recordSuccessfulLogin({
+          userId: sData.user.id || supaUserId,
+          userName: sData.user.name,
+          phone: sData.user.mobile,
+          email: sData.user.email,
+          loginMethod: 'NEW_REGISTRATION',
+          location: sData.user.location || location,
+        }).catch((err) => console.warn('Non-blocking registration activity log notice:', err));
+
         return {
           success: true,
           user: {
@@ -394,6 +438,17 @@ export async function clientRegister(data: {
 
   const localToken = `tok_${Date.now()}`;
   sessionStorage.setItem(SESSION_AUTH_KEY, localToken);
+
+  // Record initial registration login activity
+  recordSuccessfulLogin({
+    userId: newUserRecord.id,
+    userName: newUserRecord.name,
+    phone: newUserRecord.mobile,
+    email: newUserRecord.email,
+    loginMethod: 'NEW_REGISTRATION',
+    location: newUserRecord.location,
+  }).catch((err) => console.warn('Non-blocking registration activity log notice:', err));
+
   return {
     success: true,
     user: {

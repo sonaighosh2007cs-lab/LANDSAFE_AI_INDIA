@@ -308,9 +308,33 @@ export async function fetchCompleteWeatherData(
   locationMeta: { area: string; district: string; state: string; elevation?: number },
   aiClient: GoogleGenAI | null = null
 ): Promise<WeatherData> {
+  const weatherApiKey =
+    process.env.WEATHERAPI_KEY ||
+    process.env.WEATHER_API_KEY ||
+    '2514103f79d641f8b5575505262808';
+
+  // 1. Prioritize WeatherAPI.com live meteorological telemetry
+  if (weatherApiKey && weatherApiKey.trim() !== '' && weatherApiKey !== 'MY_WEATHER_API_KEY') {
+    try {
+      const weatherApiUrl = `https://api.weatherapi.com/v1/forecast.json?key=${weatherApiKey.trim()}&q=${lat},${lng}&days=10&aqi=yes&alerts=yes`;
+      const resp = await fetch(weatherApiUrl, { signal: AbortSignal.timeout(5000) });
+
+      if (resp.ok) {
+        const data: any = await resp.json();
+        if (data && data.current && data.forecast?.forecastday) {
+          return transformWeatherApiResponse(data, lat, lng, locationMeta, aiClient);
+        }
+      } else {
+        console.warn(`WeatherAPI.com responded with status ${resp.status}, checking backup providers...`);
+      }
+    } catch (weatherApiErr) {
+      console.warn('WeatherAPI.com fetch notice (seamlessly cascading to backup mesh):', weatherApiErr);
+    }
+  }
+
   const googleApiKey = process.env.GOOGLE_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
 
-  // Try Google Maps Platform Weather API if key is configured
+  // 2. Try Google Maps Platform Weather API if key is configured
   if (googleApiKey && googleApiKey !== 'MY_GOOGLE_API_KEY' && googleApiKey.trim() !== '') {
     try {
       const headers = {
@@ -337,8 +361,324 @@ export async function fetchCompleteWeatherData(
     }
   }
 
-  // Seamless, high-resolution Meteorological API (Open-Meteo with Indian IMD/ECMWF mesh)
+  // 3. High-resolution Meteorological API (Open-Meteo with Indian IMD/ECMWF mesh)
   return fetchOpenMeteoWeatherData(lat, lng, locationMeta, aiClient);
+}
+
+/**
+ * Map WeatherAPI condition codes and text to standard LandSafe WeatherCondition
+ */
+function mapWeatherApiCondition(conditionText: string, code: number, isDay: boolean): WeatherCondition {
+  const text = (conditionText || '').toLowerCase();
+
+  if (text.includes('thunder') || text.includes('storm') || code === 1087 || code >= 1273) {
+    return {
+      type: 'THUNDERSTORM',
+      description: conditionText || 'Severe Thunderstorm & Lightning',
+      iconName: 'CloudLightning',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('heavy rain') || text.includes('torrential') || code === 1195 || code === 1243 || code === 1246) {
+    return {
+      type: 'HEAVY_RAIN',
+      description: conditionText || 'Heavy Downpour',
+      iconName: 'CloudRain',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('moderate rain') || text.includes('rain shower') || code === 1189 || code === 1192 || code === 1240) {
+    return {
+      type: 'MODERATE_RAIN',
+      description: conditionText || 'Moderate Monsoonal Rain',
+      iconName: 'CloudRain',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('light rain') || text.includes('patchy rain') || code === 1183 || code === 1186 || code === 1180) {
+    return {
+      type: 'LIGHT_RAIN',
+      description: conditionText || 'Light Rain Showers',
+      iconName: 'CloudRain',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('drizzle') || code === 1150 || code === 1153) {
+    return {
+      type: 'DRIZZLE',
+      description: conditionText || 'Light Drizzle',
+      iconName: 'CloudDrizzle',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('fog') || text.includes('mist') || code === 1135 || code === 1030 || code === 1147) {
+    return {
+      type: 'FOG',
+      description: conditionText || 'Misty Hill Fog',
+      iconName: 'CloudFog',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('overcast') || code === 1009) {
+    return {
+      type: 'OVERCAST',
+      description: 'Overcast & Cloudy',
+      iconName: 'Cloud',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('partly cloudy') || text.includes('cloud') || code === 1003 || code === 1006) {
+    return {
+      type: isDay ? 'PARTLY_CLOUDY' : 'PARTLY_CLOUDY_NIGHT',
+      description: conditionText || 'Partly Cloudy',
+      iconName: isDay ? 'CloudSun' : 'CloudMoon',
+      isDaytime: isDay,
+    };
+  }
+  if (text.includes('sunny') || text.includes('clear') || code === 1000) {
+    return {
+      type: isDay ? 'CLEAR' : 'CLEAR_NIGHT',
+      description: isDay ? 'Clear Sky' : 'Clear Night',
+      iconName: isDay ? 'Sun' : 'Moon',
+      isDaytime: isDay,
+    };
+  }
+
+  return {
+    type: isDay ? 'PARTLY_CLOUDY' : 'PARTLY_CLOUDY_NIGHT',
+    description: conditionText || 'Partly Cloudy',
+    iconName: isDay ? 'CloudSun' : 'CloudMoon',
+    isDaytime: isDay,
+  };
+}
+
+/**
+ * Transform WeatherAPI.com response into LandSafe WeatherData format
+ */
+async function transformWeatherApiResponse(
+  data: any,
+  lat: number,
+  lng: number,
+  meta: { area: string; district: string; state: string; elevation?: number },
+  aiClient: GoogleGenAI | null
+): Promise<WeatherData> {
+  const current = data.current || {};
+  const location = data.location || {};
+  const forecastDays = data.forecast?.forecastday || [];
+
+  const isDay = Boolean(current.is_day === 1);
+  const condText = current.condition?.text || 'Partly Cloudy';
+  const condCode = current.condition?.code || 1003;
+  const cond = mapWeatherApiCondition(condText, condCode, isDay);
+
+  const temp = Math.round((current.temp_c ?? 24) * 10) / 10;
+  const feelsLike = Math.round((current.feelslike_c ?? temp) * 10) / 10;
+  const humidity = Math.round(current.humidity ?? 65);
+  const dewPoint = Math.round((current.dewpoint_c ?? (temp - ((100 - humidity) / 5))) * 10) / 10;
+  const heatIndex = Math.round((current.heatindex_c ?? feelsLike) * 10) / 10;
+  const uvIndex = Math.round(current.uv ?? (isDay ? 5 : 0));
+  const windSpeed = Math.round((current.wind_kph ?? 12) * 10) / 10;
+  const windDir = current.wind_dir || 'NW';
+  const windDirDeg = Math.round(current.wind_degree ?? 315);
+  const windGust = Math.round((current.gust_kph ?? windSpeed * 1.3) * 10) / 10;
+  const cloudCover = Math.round(current.cloud ?? 40);
+  const visibility = Math.round((current.vis_km ?? 10) * 10) / 10;
+  const pressure = Math.round(current.pressure_mb ?? 1012);
+  const precipitationCurrent = Math.round((current.precip_mm ?? 0) * 10) / 10;
+
+  // Process Daily Forecast
+  const todayForecastDay = forecastDays[0] || {};
+  const todayAstro = todayForecastDay.astro || {};
+  const todayDay = todayForecastDay.day || {};
+
+  const tempMax = Math.round((todayDay.maxtemp_c ?? temp + 2) * 10) / 10;
+  const tempMin = Math.round((todayDay.mintemp_c ?? temp - 4) * 10) / 10;
+  const sunrise = todayAstro.sunrise || '05:40 AM';
+  const sunset = todayAstro.sunset || '06:25 PM';
+  const moonrise = todayAstro.moonrise || '07:15 PM';
+  const moonset = todayAstro.moonset || '06:30 AM';
+  const moonPhase = todayAstro.moon_phase || 'Waxing Gibbous';
+  const moonIllumination = parseInt(todayAstro.moon_illumination || '65', 10);
+
+  const dailyList: DailyForecastItem[] = forecastDays.map((d: any, idx: number) => {
+    const dDate = new Date(d.date);
+    const dayName = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : dDate.toLocaleDateString('en-IN', { weekday: 'short' });
+    const shortDate = dDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+    const dayObj = d.day || {};
+    const astroObj = d.astro || {};
+    const dCondText = dayObj.condition?.text || 'Partly Cloudy';
+    const dCondCode = dayObj.condition?.code || 1003;
+    const dCond = mapWeatherApiCondition(dCondText, dCondCode, true);
+    const dMax = Math.round(dayObj.maxtemp_c ?? temp + 2);
+    const dMin = Math.round(dayObj.mintemp_c ?? temp - 3);
+    const dRainProb = Math.round(dayObj.daily_chance_of_rain ?? dayObj.daily_chance_of_snow ?? 20);
+    const dRainMm = Math.round((dayObj.totalprecip_mm ?? 0) * 10) / 10;
+
+    return {
+      date: d.date,
+      displayDate: idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : `${dayName}, ${shortDate}`,
+      dayName: dDate.toLocaleDateString('en-IN', { weekday: 'long' }),
+      shortDate,
+      tempMax: dMax,
+      tempMin: dMin,
+      condition: dCond,
+      precipitationProbability: dRainProb,
+      precipitationMm: dRainMm,
+      uvIndexMax: Math.round(dayObj.uv ?? 6),
+      windSpeedMax: Math.round(dayObj.maxwind_kph ?? 16),
+      humidityAvg: Math.round(dayObj.avghumidity ?? 60),
+      sunrise: astroObj.sunrise || '05:42 AM',
+      sunset: astroObj.sunset || '06:24 PM',
+      moonPhase: astroObj.moon_phase || moonPhase,
+      detailedSummary: `${dCond.description} with highs around ${dMax}°C and lows around ${dMin}°C. ${dRainProb > 40 ? `Rain probability ${dRainProb}% (${dRainMm} mm).` : 'Clear travel conditions.'}`,
+    };
+  });
+
+  // Process Hourly Forecast (Flatten first 2-3 forecast days to get at least 24 upcoming hours)
+  const allHours = forecastDays.flatMap((d: any) => d.hour || []);
+  const nowEpoch = Math.floor(Date.now() / 1000);
+  // Find current hour index or start from now
+  const upcomingHours = allHours.filter((h: any) => h.time_epoch >= nowEpoch - 1800).slice(0, 24);
+
+  const hourlyList: HourlyForecastItem[] = upcomingHours.map((h: any, idx: number) => {
+    const hTime = new Date(h.time);
+    const displayTime = idx === 0 ? 'Now' : hTime.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true });
+    const hIsDay = Boolean(h.is_day === 1);
+    const hCond = mapWeatherApiCondition(h.condition?.text || 'Partly Cloudy', h.condition?.code || 1003, hIsDay);
+    const hTemp = Math.round((h.temp_c ?? temp) * 10) / 10;
+    const hRainProb = Math.round(h.chance_of_rain ?? 15);
+    const hRainMm = Math.round((h.precip_mm ?? 0) * 10) / 10;
+
+    return {
+      time: h.time,
+      displayTime,
+      fullDate: hTime.toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: 'numeric', hour12: true }),
+      temperature: hTemp,
+      feelsLike: Math.round((h.feelslike_c ?? hTemp) * 10) / 10,
+      precipitationProbability: hRainProb,
+      precipitationMm: hRainMm,
+      condition: hCond,
+      humidity: Math.round(h.humidity ?? 65),
+      uvIndex: Math.round(h.uv ?? 0),
+      windSpeed: Math.round(h.wind_kph ?? 10),
+      windDirection: h.wind_dir || 'NW',
+      isDaytime: hIsDay,
+    };
+  });
+
+  // Calculate past 24h history (take earliest hours from day 0)
+  const pastHours = allHours.filter((h: any) => h.time_epoch < nowEpoch).slice(-8);
+  const historyList: HistoricalHourItem[] = pastHours.map((h: any) => {
+    const hTime = new Date(h.time);
+    const hIsDay = Boolean(h.is_day === 1);
+    return {
+      time: h.time,
+      displayTime: hTime.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true }),
+      temperature: Math.round((h.temp_c ?? temp) * 10) / 10,
+      precipitationMm: Math.round((h.precip_mm ?? 0) * 10) / 10,
+      humidity: Math.round(h.humidity ?? 60),
+      condition: mapWeatherApiCondition(h.condition?.text || 'Partly Cloudy', h.condition?.code || 1003, hIsDay),
+    };
+  });
+
+  const rainWindow = computeRainWindow(hourlyList);
+
+  // Weather Alerts from WeatherAPI
+  const rawAlerts = data.alerts?.alert || [];
+  const alerts: WeatherAlert[] = rawAlerts.map((a: any, aIdx: number) => ({
+    id: `wapi-alert-${aIdx}`,
+    title: a.headline || a.event || 'Severe Weather Alert',
+    severity: (a.severity || 'WARNING').toUpperCase().includes('EXTREME') ? 'EXTREME' : 'WARNING',
+    source: a.author || 'WeatherAPI Meteorological Alert System',
+    effectiveTime: a.effective ? new Date(a.effective).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Active Now',
+    expireTime: a.expires ? new Date(a.expires).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Next 24 Hours',
+    description: a.desc || a.instruction || `Weather alert issued for ${location.name || meta.area}, ${meta.state}.`,
+  }));
+
+  // If high rain probability and no direct alert, add localized monsoonal alert
+  if (alerts.length === 0 && rainWindow.maxProbabilityNext6h >= 75) {
+    alerts.push({
+      id: 'wapi-monsoon-warning',
+      title: 'Monsoonal Rain & Soil Moisture Advisory',
+      severity: 'WARNING',
+      source: 'LandSafe AI Meteorological Intelligence',
+      effectiveTime: 'Active Today',
+      expireTime: 'Next 24 Hours',
+      description: `High precipitation probability (${rainWindow.maxProbabilityNext6h}%) with cumulative rain expected around ${rainWindow.totalExpectedRain24h} mm in ${meta.district}, ${meta.state}.`,
+    });
+  }
+
+  const summary = await generateWeatherSummary(aiClient, {
+    locationName: meta.area,
+    state: meta.state,
+    temp,
+    feelsLike,
+    tempMax,
+    tempMin,
+    condition: condText,
+    rainProb: rainWindow.maxProbabilityNext6h,
+    rainMm: rainWindow.totalExpectedRain24h,
+    humidity,
+    windSpeed,
+    windDir,
+    uvIndex,
+    rainWindowHeadline: rainWindow.headline,
+  });
+
+  return {
+    location: {
+      name: meta.area,
+      district: meta.district,
+      state: meta.state,
+      country: location.country || 'India',
+      latitude: lat,
+      longitude: lng,
+      elevation: meta.elevation,
+    },
+    current: {
+      temperature: temp,
+      feelsLike,
+      tempMax,
+      tempMin,
+      condition: cond,
+      humidity,
+      dewPoint,
+      heatIndex,
+      precipitation: precipitationCurrent,
+      precipitationProbability: rainWindow.maxProbabilityNext6h,
+      precipitationType: precipitationCurrent > 0 ? 'Rain' : 'None',
+      thunderstormProbability: cond.type === 'THUNDERSTORM' ? 85 : rainWindow.maxProbabilityNext6h > 60 ? 30 : 5,
+      uvIndex,
+      uvDescription: getUvCategory(uvIndex),
+      windSpeed,
+      windDirection: windDir,
+      windDirectionDegrees: windDirDeg,
+      windGust,
+      cloudCover,
+      visibility,
+      visibilityStatus: visibility >= 8 ? 'Good' : visibility >= 4 ? 'Moderate' : 'Poor',
+      pressure,
+      isDaytime: isDay,
+      sunrise,
+      sunset,
+      dayLength: '12h 45m',
+      daylightStatus: isDay ? 'Daylight' : 'Night',
+      moonrise,
+      moonset,
+      moonPhase,
+      moonIllumination,
+    },
+    hourly: hourlyList,
+    daily: dailyList,
+    history24h: historyList,
+    rainWindow,
+    alerts,
+    summary,
+    dataSource: 'WeatherAPI Live Telemetry Network',
+    lastUpdated: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+    attributionText: 'Live weather telemetry powered by WeatherAPI.com',
+  };
 }
 
 // Transform Google Weather API response

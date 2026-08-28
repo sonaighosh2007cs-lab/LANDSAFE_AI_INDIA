@@ -30,7 +30,6 @@ export const DashboardOverview: React.FC = () => {
     telemetry,
     riskScore,
     riskDelta,
-    setIsLocationModalOpen,
     setActiveRoute,
     isDetectingGps,
     detectAndApplyGpsLocation,
@@ -105,49 +104,61 @@ export const DashboardOverview: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
       {/* ========================================================================= */}
-      {/* 1. TOP HEADER SECTION: Greeting + Live Time + Location Change Option */}
+      {/* 1. TOP HEADER SECTION: Greeting + Location + [Time] [Moderate Risk] [My Location] */}
       {/* ========================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
+        {/* Left: Dynamic Logged-in User Greeting & Active Location Title */}
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            Hello, {userProfile.name || 'Rishi'}
+            Hello, {userProfile.name || 'User'}
           </h1>
-          <p className="text-gray-400 text-sm sm:text-base mt-0.5">
-            Current Location:{' '}
-            <span className="text-orange-500 font-semibold uppercase tracking-wide">
-              {userProfile.location.area}, {userProfile.location.district} ({userProfile.location.state})
-            </span>
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <MapPin className="w-4 h-4 text-orange-500 shrink-0" />
+            <p className="text-gray-400 text-xs sm:text-sm font-mono truncate">
+              <span className="text-orange-400 font-semibold uppercase">{userProfile.location.area}, {userProfile.location.district}</span> ({userProfile.location.state})
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="text-right hidden sm:block">
-            <p className="text-[11px] text-gray-400 uppercase tracking-widest font-mono font-medium">Risk Index</p>
-            <p className={`text-base sm:text-lg font-bold ${riskTheme.text}`}>{riskTheme.label}</p>
-          </div>
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#121214] border border-white/10 text-xs sm:text-sm font-mono text-gray-200 shadow-sm">
-            <Clock className="w-4 h-4 text-orange-400" />
+        {/* Right: [Time] [Moderate Risk] [My Location] */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap lg:flex-nowrap justify-start lg:justify-end shrink-0">
+          {/* 1. Time (immediately to the left of Moderate Risk) */}
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#121214] border border-white/10 text-xs sm:text-sm font-mono text-gray-200 shadow-sm shrink-0">
+            <Clock className="w-4 h-4 text-orange-400 shrink-0" />
             <span>{currentTime || '08:06 PM'}</span>
           </div>
+
+          {/* 2. Risk Indicator */}
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#121214] border border-white/10 shadow-sm shrink-0">
+            <span
+              className={`w-2 h-2 rounded-full animate-pulse ${
+                riskScore >= 75
+                  ? 'bg-red-500'
+                  : riskScore >= 50
+                  ? 'bg-orange-500'
+                  : riskScore >= 35
+                  ? 'bg-amber-400'
+                  : 'bg-emerald-400'
+              }`}
+            />
+            <span className={`text-xs sm:text-sm font-bold font-mono tracking-wide ${riskTheme.text}`}>
+              {riskTheme.label}
+            </span>
+          </div>
+
+          {/* 3. My Location GPS action (Far Right) */}
           <button
             onClick={() => detectAndApplyGpsLocation()}
             disabled={isDetectingGps}
-            className="interactive-btn px-3.5 py-2 rounded-xl bg-orange-950/50 hover:bg-orange-900/50 border border-orange-500/40 text-orange-300 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
-            title="Detect GPS location from device"
+            className="interactive-btn px-3.5 py-2 rounded-xl bg-orange-950/50 hover:bg-orange-900/50 border border-orange-500/40 text-orange-300 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm shrink-0"
+            title="Detect device GPS location"
           >
             {isDetectingGps ? (
-              <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
+              <Loader2 className="w-4 h-4 text-orange-400 animate-spin shrink-0" />
             ) : (
-              <Navigation className="w-4 h-4 text-orange-400" />
+              <Navigation className="w-4 h-4 text-orange-400 shrink-0" />
             )}
-            <span className="hidden sm:inline">My Location</span>
-          </button>
-          <button
-            onClick={() => setIsLocationModalOpen(true)}
-            className="interactive-btn px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-[0_0_15px_rgba(234,88,12,0.3)]"
-          >
-            <MapPin className="w-4 h-4" />
-            <span>Change Area</span>
+            <span>My Location</span>
           </button>
         </div>
       </div>

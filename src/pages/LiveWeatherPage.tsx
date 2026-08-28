@@ -188,9 +188,6 @@ export const LiveWeatherPage: React.FC = () => {
       {/* Main Weather Content */}
       {weatherData && (
         <div className="space-y-6">
-          {/* Active Advisories & Warnings Banner (if any) */}
-          <WeatherAlertsBanner alerts={weatherData.alerts} />
-
           {/* Weather Hero Card (Current Conditions & AI Summary) */}
           <WeatherHero
             weather={weatherData}
@@ -236,6 +233,9 @@ export const LiveWeatherPage: React.FC = () => {
             weather={weatherData}
             location={userProfile.location}
           />
+
+          {/* Active Advisories & Weather Warnings Banner (placed at the bottom) */}
+          <WeatherAlertsBanner alerts={weatherData.alerts} />
         </div>
       )}
 

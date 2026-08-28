@@ -27,7 +27,14 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNavOpen }) => {
-  const { activeRoute, setActiveRoute, userProfile, logoutUser, openAppointmentModal } = useApp();
+  const {
+    activeRoute,
+    setActiveRoute,
+    userProfile,
+    logoutUser,
+    openAppointmentModal,
+    openLoginActivityModal,
+  } = useApp();
 
   const navItems: {
     id: AppRoute;
@@ -74,12 +81,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
   };
 
   const getInitials = (name: string) => {
-    if (!name) return 'SO';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    if (!name || !name.trim()) return 'OP';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2 && parts[0] && parts[parts.length - 1]) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
-    return name.slice(0, 2).toUpperCase();
+    return name.trim().slice(0, 2).toUpperCase();
   };
 
   return (
@@ -174,6 +181,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
             </div>
           </div>
 
+          {/* Admin Login Activity Audit Widget */}
+          <div className="pt-1 px-1">
+            <button
+              onClick={() => {
+                setIsMobileNavOpen(false);
+                openLoginActivityModal();
+              }}
+              className="w-full text-left rounded-xl bg-[#0e1726] hover:bg-[#121d30] p-2.5 border border-[#1e293b] hover:border-emerald-500/30 transition-all flex items-center justify-between group cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                  <Shield className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-200 group-hover:text-white truncate">
+                    Login Activity Audit
+                  </p>
+                  <p className="text-[10.5px] text-slate-400 font-mono flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                    Supabase Stream
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors shrink-0" />
+            </button>
+          </div>
+
           {/* System Status Widget */}
           <div className="pt-3 px-1">
             <div className="rounded-xl bg-gradient-to-br from-orange-600/20 to-transparent p-3.5 border border-orange-600/20">
@@ -197,19 +231,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
               setIsMobileNavOpen(false);
             }}
             className="flex-1 flex items-center justify-between p-2 rounded-xl bg-[#121214] border border-white/5 hover:border-white/15 transition-all cursor-pointer group min-w-0"
-            title="View My Area Telemetry"
+            title="View Monitoring Sector Telemetry"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow-sm shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-orange-600/20 border border-orange-500/30 flex items-center justify-center font-bold text-xs text-orange-400 font-mono shadow-sm shrink-0">
                 {getInitials(userProfile.name)}
               </div>
               <div className="text-left min-w-0">
-                <p className="text-[13px] font-bold text-white leading-tight truncate">
+                <p className="text-[13px] font-bold text-white uppercase tracking-tight leading-tight truncate">
                   {userProfile.name || 'Operator'}
                 </p>
-                <p className="text-[11px] text-orange-400 flex items-center gap-1 font-mono mt-0.5 truncate">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shrink-0" />
-                  <span className="truncate">{userProfile.location.area || 'Active'}</span>
+                <p className="text-[11px] text-orange-400 flex items-center gap-1.5 font-mono mt-0.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="truncate">
+                    {userProfile.location.area || 'Active'}
+                    {userProfile.location.district && userProfile.location.district !== userProfile.location.area ? `, ${userProfile.location.district}` : ''}
+                  </span>
                 </p>
               </div>
             </div>
@@ -224,8 +261,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileNavOpen, setIsMobileNa
               logoutUser();
             }}
             className="p-2.5 rounded-xl bg-[#121214] border border-white/5 hover:border-red-500/40 hover:bg-red-950/30 text-gray-400 hover:text-red-400 transition-all cursor-pointer flex items-center justify-center shrink-0"
-            title="Log Out / Exit Session"
-            aria-label="Log Out"
+            title="Reset Session"
+            aria-label="Reset Session"
           >
             <LogOut className="w-4 h-4" />
           </button>

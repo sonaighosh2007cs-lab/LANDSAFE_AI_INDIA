@@ -109,23 +109,39 @@ const INDIAN_STATES_AND_UTS: string[] = [
 
 // Major Indian Disaster-Prone Districts, Cities & Regions mapping to their state
 const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> = {
+  // Kerala
   wayanad: { state: 'Kerala', district: 'Wayanad' },
+  meppadi: { state: 'Kerala', district: 'Wayanad' },
+  chooralmala: { state: 'Kerala', district: 'Wayanad' },
+  mundakkai: { state: 'Kerala', district: 'Wayanad' },
+  vythiri: { state: 'Kerala', district: 'Wayanad' },
+  mananthavady: { state: 'Kerala', district: 'Wayanad' },
+  'sulthan bathery': { state: 'Kerala', district: 'Wayanad' },
   idukki: { state: 'Kerala', district: 'Idukki' },
   munnar: { state: 'Kerala', district: 'Idukki' },
+  devikulam: { state: 'Kerala', district: 'Idukki' },
+  peermade: { state: 'Kerala', district: 'Idukki' },
   kozhikode: { state: 'Kerala', district: 'Kozhikode' },
   malappuram: { state: 'Kerala', district: 'Malappuram' },
   palakkad: { state: 'Kerala', district: 'Palakkad' },
   thrissur: { state: 'Kerala', district: 'Thrissur' },
   ernakulam: { state: 'Kerala', district: 'Ernakulam' },
+  kochi: { state: 'Kerala', district: 'Ernakulam' },
   kottayam: { state: 'Kerala', district: 'Kottayam' },
   alappuzha: { state: 'Kerala', district: 'Alappuzha' },
   pathanamthitta: { state: 'Kerala', district: 'Pathanamthitta' },
   kannur: { state: 'Kerala', district: 'Kannur' },
   kasaragod: { state: 'Kerala', district: 'Kasaragod' },
   thiruvananthapuram: { state: 'Kerala', district: 'Thiruvananthapuram' },
+  kollam: { state: 'Kerala', district: 'Kollam' },
+
+  // Himachal Pradesh
   shimla: { state: 'Himachal Pradesh', district: 'Shimla' },
+  kufri: { state: 'Himachal Pradesh', district: 'Shimla' },
+  narkanda: { state: 'Himachal Pradesh', district: 'Shimla' },
   manali: { state: 'Himachal Pradesh', district: 'Kullu' },
   kullu: { state: 'Himachal Pradesh', district: 'Kullu' },
+  solang: { state: 'Himachal Pradesh', district: 'Kullu' },
   mandi: { state: 'Himachal Pradesh', district: 'Mandi' },
   dharamshala: { state: 'Himachal Pradesh', district: 'Kangra' },
   kangra: { state: 'Himachal Pradesh', district: 'Kangra' },
@@ -136,8 +152,13 @@ const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> 
   solan: { state: 'Himachal Pradesh', district: 'Solan' },
   sirmaur: { state: 'Himachal Pradesh', district: 'Sirmaur' },
   bilaspur: { state: 'Himachal Pradesh', district: 'Bilaspur' },
+  hamirpur: { state: 'Himachal Pradesh', district: 'Hamirpur' },
+  una: { state: 'Himachal Pradesh', district: 'Una' },
+
+  // Uttarakhand
   dehradun: { state: 'Uttarakhand', district: 'Dehradun' },
   rishikesh: { state: 'Uttarakhand', district: 'Dehradun' },
+  mussoorie: { state: 'Uttarakhand', district: 'Dehradun' },
   haridwar: { state: 'Uttarakhand', district: 'Haridwar' },
   chamoli: { state: 'Uttarakhand', district: 'Chamoli' },
   joshimath: { state: 'Uttarakhand', district: 'Chamoli' },
@@ -151,25 +172,79 @@ const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> 
   pithoragarh: { state: 'Uttarakhand', district: 'Pithoragarh' },
   bageshwar: { state: 'Uttarakhand', district: 'Bageshwar' },
   champawat: { state: 'Uttarakhand', district: 'Champawat' },
+  ranikhet: { state: 'Uttarakhand', district: 'Almora' },
+  pauri: { state: 'Uttarakhand', district: 'Pauri Garhwal' },
+  kotdwar: { state: 'Uttarakhand', district: 'Pauri Garhwal' },
+
+  // West Bengal
+  kolkata: { state: 'West Bengal', district: 'Kolkata' },
+  calcutta: { state: 'West Bengal', district: 'Kolkata' },
+  howrah: { state: 'West Bengal', district: 'Howrah' },
+  hooghly: { state: 'West Bengal', district: 'Hooghly' },
+  'salt lake': { state: 'West Bengal', district: 'North 24 Parganas' },
+  alipore: { state: 'West Bengal', district: 'South 24 Parganas' },
+  'dum dum': { state: 'West Bengal', district: 'North 24 Parganas' },
+  'north 24 parganas': { state: 'West Bengal', district: 'North 24 Parganas' },
+  'south 24 parganas': { state: 'West Bengal', district: 'South 24 Parganas' },
+  sunderbans: { state: 'West Bengal', district: 'South 24 Parganas' },
+  sundarbans: { state: 'West Bengal', district: 'South 24 Parganas' },
+  digha: { state: 'West Bengal', district: 'Purba Medinipur' },
+  haldia: { state: 'West Bengal', district: 'Purba Medinipur' },
+  medinipur: { state: 'West Bengal', district: 'Paschim Medinipur' },
+  midnapore: { state: 'West Bengal', district: 'Paschim Medinipur' },
+  asansol: { state: 'West Bengal', district: 'Paschim Bardhaman' },
+  durgapur: { state: 'West Bengal', district: 'Paschim Bardhaman' },
+  bardhaman: { state: 'West Bengal', district: 'Purba Bardhaman' },
+  malda: { state: 'West Bengal', district: 'Malda' },
+  murshidabad: { state: 'West Bengal', district: 'Murshidabad' },
+  siliguri: { state: 'West Bengal', district: 'Darjeeling' },
   darjeeling: { state: 'West Bengal', district: 'Darjeeling' },
   kalimpong: { state: 'West Bengal', district: 'Kalimpong' },
   kurseong: { state: 'West Bengal', district: 'Darjeeling' },
-  siliguri: { state: 'West Bengal', district: 'Darjeeling' },
+  mirik: { state: 'West Bengal', district: 'Darjeeling' },
   jalpaiguri: { state: 'West Bengal', district: 'Jalpaiguri' },
   alipurduar: { state: 'West Bengal', district: 'Alipurduar' },
   'cooch behar': { state: 'West Bengal', district: 'Cooch Behar' },
-  kolkata: { state: 'West Bengal', district: 'Kolkata' },
-  howrah: { state: 'West Bengal', district: 'Howrah' },
-  malda: { state: 'West Bengal', district: 'Malda' },
-  murshidabad: { state: 'West Bengal', district: 'Murshidabad' },
-  sunderbans: { state: 'West Bengal' },
-  digha: { state: 'West Bengal', district: 'Purba Medinipur' },
+  teesta: { state: 'West Bengal' },
+
+  // Sikkim
   gangtok: { state: 'Sikkim', district: 'East Sikkim' },
+  'east sikkim': { state: 'Sikkim', district: 'East Sikkim' },
   mangan: { state: 'Sikkim', district: 'North Sikkim' },
+  'north sikkim': { state: 'Sikkim', district: 'North Sikkim' },
   namchi: { state: 'Sikkim', district: 'South Sikkim' },
+  'south sikkim': { state: 'Sikkim', district: 'South Sikkim' },
   gyalshing: { state: 'Sikkim', district: 'West Sikkim' },
+  'west sikkim': { state: 'Sikkim', district: 'West Sikkim' },
   chungthang: { state: 'Sikkim', district: 'North Sikkim' },
+  dikchu: { state: 'Sikkim', district: 'East Sikkim' },
+  singtam: { state: 'Sikkim', district: 'East Sikkim' },
+  rangpo: { state: 'Sikkim', district: 'East Sikkim' },
+  lachen: { state: 'Sikkim', district: 'North Sikkim' },
+  lachung: { state: 'Sikkim', district: 'North Sikkim' },
+  pakyong: { state: 'Sikkim', district: 'Pakyong' },
+  soreng: { state: 'Sikkim', district: 'Soreng' },
+
+  // Meghalaya
+  shillong: { state: 'Meghalaya', district: 'East Khasi Hills' },
+  'east khasi hills': { state: 'Meghalaya', district: 'East Khasi Hills' },
+  'west khasi hills': { state: 'Meghalaya', district: 'West Khasi Hills' },
+  'khasi hills': { state: 'Meghalaya', district: 'East Khasi Hills' },
+  cherrapunji: { state: 'Meghalaya', district: 'East Khasi Hills' },
+  sohra: { state: 'Meghalaya', district: 'East Khasi Hills' },
+  mawsynram: { state: 'Meghalaya', district: 'East Khasi Hills' },
+  umiam: { state: 'Meghalaya', district: 'Ri Bhoi' },
+  nongpoh: { state: 'Meghalaya', district: 'Ri Bhoi' },
+  'ri bhoi': { state: 'Meghalaya', district: 'Ri Bhoi' },
+  jowai: { state: 'Meghalaya', district: 'West Jaintia Hills' },
+  'jaintia hills': { state: 'Meghalaya', district: 'West Jaintia Hills' },
+  tura: { state: 'Meghalaya', district: 'West Garo Hills' },
+  'garo hills': { state: 'Meghalaya', district: 'West Garo Hills' },
+
+  // Assam
   guwahati: { state: 'Assam', district: 'Kamrup Metropolitan' },
+  kamrup: { state: 'Assam', district: 'Kamrup Metropolitan' },
+  dispur: { state: 'Assam', district: 'Kamrup Metropolitan' },
   dibrugarh: { state: 'Assam', district: 'Dibrugarh' },
   silchar: { state: 'Assam', district: 'Cachar' },
   cachar: { state: 'Assam', district: 'Cachar' },
@@ -181,13 +256,42 @@ const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> 
   dhubri: { state: 'Assam', district: 'Dhubri' },
   golaghat: { state: 'Assam', district: 'Golaghat' },
   sonitpur: { state: 'Assam', district: 'Sonitpur' },
+  tezpur: { state: 'Assam', district: 'Sonitpur' },
   dhemaji: { state: 'Assam', district: 'Dhemaji' },
   lakhimpur: { state: 'Assam', district: 'Lakhimpur' },
   kaziranga: { state: 'Assam', district: 'Golaghat' },
   majuli: { state: 'Assam', district: 'Majuli' },
   morigaon: { state: 'Assam', district: 'Morigaon' },
+  tinsukia: { state: 'Assam', district: 'Tinsukia' },
+  kokrajhar: { state: 'Assam', district: 'Kokrajhar' },
+  bongaigaon: { state: 'Assam', district: 'Bongaigaon' },
+  goalpara: { state: 'Assam', district: 'Goalpara' },
   brahmaputra: { state: 'Assam' },
-  teesta: { state: 'West Bengal' },
+
+  // Arunachal Pradesh
+  itanagar: { state: 'Arunachal Pradesh', district: 'Papum Pare' },
+  'papum pare': { state: 'Arunachal Pradesh', district: 'Papum Pare' },
+  naharlagun: { state: 'Arunachal Pradesh', district: 'Papum Pare' },
+  tawang: { state: 'Arunachal Pradesh', district: 'Tawang' },
+  bomdila: { state: 'Arunachal Pradesh', district: 'West Kameng' },
+  'west kameng': { state: 'Arunachal Pradesh', district: 'West Kameng' },
+  dirang: { state: 'Arunachal Pradesh', district: 'West Kameng' },
+  bhalukpong: { state: 'Arunachal Pradesh', district: 'West Kameng' },
+  ziro: { state: 'Arunachal Pradesh', district: 'Lower Subansiri' },
+  pasighat: { state: 'Arunachal Pradesh', district: 'East Siang' },
+  changlang: { state: 'Arunachal Pradesh', district: 'Changlang' },
+  tezu: { state: 'Arunachal Pradesh', district: 'Lohit' },
+
+  // Nagaland, Manipur, Mizoram, Tripura
+  kohima: { state: 'Nagaland', district: 'Kohima' },
+  dimapur: { state: 'Nagaland', district: 'Dimapur' },
+  imphal: { state: 'Manipur', district: 'Imphal West' },
+  churachandpur: { state: 'Manipur', district: 'Churachandpur' },
+  aizawl: { state: 'Mizoram', district: 'Aizawl' },
+  lunglei: { state: 'Mizoram', district: 'Lunglei' },
+  agartala: { state: 'Tripura', district: 'West Tripura' },
+
+  // Maharashtra
   mumbai: { state: 'Maharashtra', district: 'Mumbai' },
   pune: { state: 'Maharashtra', district: 'Pune' },
   thane: { state: 'Maharashtra', district: 'Thane' },
@@ -197,24 +301,62 @@ const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> 
   kolhapur: { state: 'Maharashtra', district: 'Kolhapur' },
   satara: { state: 'Maharashtra', district: 'Satara' },
   nashik: { state: 'Maharashtra', district: 'Nashik' },
-  konkan: { state: 'Maharashtra' },
   mahabaleshwar: { state: 'Maharashtra', district: 'Satara' },
+  lonavala: { state: 'Maharashtra', district: 'Pune' },
+  chiplun: { state: 'Maharashtra', district: 'Ratnagiri' },
+  konkan: { state: 'Maharashtra' },
+
+  // Odisha
   puri: { state: 'Odisha', district: 'Puri' },
   cuttack: { state: 'Odisha', district: 'Cuttack' },
   bhubaneswar: { state: 'Odisha', district: 'Khordha' },
+  khordha: { state: 'Odisha', district: 'Khordha' },
   balasore: { state: 'Odisha', district: 'Balasore' },
   bhadrak: { state: 'Odisha', district: 'Bhadrak' },
   ganjam: { state: 'Odisha', district: 'Ganjam' },
   jagatsinghpur: { state: 'Odisha', district: 'Jagatsinghpur' },
   kendrapara: { state: 'Odisha', district: 'Kendrapara' },
   paradeep: { state: 'Odisha', district: 'Jagatsinghpur' },
+  mayurbhanj: { state: 'Odisha', district: 'Mayurbhanj' },
+  rourkela: { state: 'Odisha', district: 'Sundargarh' },
+
+  // Tamil Nadu
   chennai: { state: 'Tamil Nadu', district: 'Chennai' },
   nilgiris: { state: 'Tamil Nadu', district: 'Nilgiris' },
   ooty: { state: 'Tamil Nadu', district: 'Nilgiris' },
+  udhagamandalam: { state: 'Tamil Nadu', district: 'Nilgiris' },
+  coonoor: { state: 'Tamil Nadu', district: 'Nilgiris' },
   kodaikanal: { state: 'Tamil Nadu', district: 'Dindigul' },
   coimbatore: { state: 'Tamil Nadu', district: 'Coimbatore' },
   cuddalore: { state: 'Tamil Nadu', district: 'Cuddalore' },
   nagapattinam: { state: 'Tamil Nadu', district: 'Nagapattinam' },
+  madurai: { state: 'Tamil Nadu', district: 'Madurai' },
+  kanyakumari: { state: 'Tamil Nadu', district: 'Kanyakumari' },
+
+  // Karnataka
+  bengaluru: { state: 'Karnataka', district: 'Bengaluru Urban' },
+  bangalore: { state: 'Karnataka', district: 'Bengaluru Urban' },
+  mangalore: { state: 'Karnataka', district: 'Dakshina Kannada' },
+  'dakshina kannada': { state: 'Karnataka', district: 'Dakshina Kannada' },
+  udupi: { state: 'Karnataka', district: 'Udupi' },
+  karwar: { state: 'Karnataka', district: 'Uttara Kannada' },
+  'uttara kannada': { state: 'Karnataka', district: 'Uttara Kannada' },
+  coorg: { state: 'Karnataka', district: 'Kodagu' },
+  kodagu: { state: 'Karnataka', district: 'Kodagu' },
+  chikkamagaluru: { state: 'Karnataka', district: 'Chikkamagaluru' },
+  shivamogga: { state: 'Karnataka', district: 'Shivamogga' },
+
+  // Andhra Pradesh
+  visakhapatnam: { state: 'Andhra Pradesh', district: 'Visakhapatnam' },
+  araku: { state: 'Andhra Pradesh', district: 'Alluri Sitharama Raju' },
+  'alluri sitharama raju': { state: 'Andhra Pradesh', district: 'Alluri Sitharama Raju' },
+  vijayawada: { state: 'Andhra Pradesh', district: 'NTR' },
+  ntr: { state: 'Andhra Pradesh', district: 'NTR' },
+  guntur: { state: 'Andhra Pradesh', district: 'Guntur' },
+  tirupati: { state: 'Andhra Pradesh', district: 'Tirupati' },
+  kakinada: { state: 'Andhra Pradesh', district: 'Kakinada' },
+
+  // Bihar
   patna: { state: 'Bihar', district: 'Patna' },
   bhagalpur: { state: 'Bihar', district: 'Bhagalpur' },
   katihar: { state: 'Bihar', district: 'Katihar' },
@@ -227,6 +369,8 @@ const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> 
   muzaffarpur: { state: 'Bihar', district: 'Muzaffarpur' },
   darbhanga: { state: 'Bihar', district: 'Darbhanga' },
   samastipur: { state: 'Bihar', district: 'Samastipur' },
+
+  // Jammu and Kashmir & Ladakh
   srinagar: { state: 'Jammu and Kashmir', district: 'Srinagar' },
   jammu: { state: 'Jammu and Kashmir', district: 'Jammu' },
   anantnag: { state: 'Jammu and Kashmir', district: 'Anantnag' },
@@ -238,18 +382,8 @@ const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> 
   reasi: { state: 'Jammu and Kashmir', district: 'Reasi' },
   leh: { state: 'Ladakh', district: 'Leh' },
   kargil: { state: 'Ladakh', district: 'Kargil' },
-  visakhapatnam: { state: 'Andhra Pradesh', district: 'Visakhapatnam' },
-  vijayawada: { state: 'Andhra Pradesh', district: 'NTR' },
-  kakinada: { state: 'Andhra Pradesh', district: 'Kakinada' },
-  tirupati: { state: 'Andhra Pradesh', district: 'Tirupati' },
-  bengaluru: { state: 'Karnataka', district: 'Bengaluru Urban' },
-  mangalore: { state: 'Karnataka', district: 'Dakshina Kannada' },
-  udupi: { state: 'Karnataka', district: 'Udupi' },
-  karwar: { state: 'Karnataka', district: 'Uttara Kannada' },
-  coorg: { state: 'Karnataka', district: 'Kodagu' },
-  kodagu: { state: 'Karnataka', district: 'Kodagu' },
-  chikkamagaluru: { state: 'Karnataka', district: 'Chikkamagaluru' },
-  shivamogga: { state: 'Karnataka', district: 'Shivamogga' },
+
+  // Gujarat
   ahmedabad: { state: 'Gujarat', district: 'Ahmedabad' },
   surat: { state: 'Gujarat', district: 'Surat' },
   vadodara: { state: 'Gujarat', district: 'Vadodara' },
@@ -257,24 +391,21 @@ const INDIAN_REGIONAL_MAP: Record<string, { state: string; district?: string }> 
   kutch: { state: 'Gujarat', district: 'Kutch' },
   bhuj: { state: 'Gujarat', district: 'Kutch' },
   saurashtra: { state: 'Gujarat' },
+
+  // Rajasthan
   jaipur: { state: 'Rajasthan', district: 'Jaipur' },
   jodhpur: { state: 'Rajasthan', district: 'Jodhpur' },
   udaipur: { state: 'Rajasthan', district: 'Udaipur' },
   kota: { state: 'Rajasthan', district: 'Kota' },
+
+  // Uttar Pradesh
   lucknow: { state: 'Uttar Pradesh', district: 'Lucknow' },
   varanasi: { state: 'Uttar Pradesh', district: 'Varanasi' },
   prayagraj: { state: 'Uttar Pradesh', district: 'Prayagraj' },
   gorakhpur: { state: 'Uttar Pradesh', district: 'Gorakhpur' },
   ayodhya: { state: 'Uttar Pradesh', district: 'Ayodhya' },
-  itanagar: { state: 'Arunachal Pradesh', district: 'Papum Pare' },
-  tawang: { state: 'Arunachal Pradesh', district: 'Tawang' },
-  shillong: { state: 'Meghalaya', district: 'East Khasi Hills' },
-  cherrapunji: { state: 'Meghalaya', district: 'East Khasi Hills' },
-  mawsynram: { state: 'Meghalaya', district: 'East Khasi Hills' },
-  imphal: { state: 'Manipur', district: 'Imphal West' },
-  aizawl: { state: 'Mizoram', district: 'Aizawl' },
-  kohima: { state: 'Nagaland', district: 'Kohima' },
-  agartala: { state: 'Tripura', district: 'West Tripura' },
+
+  // Madhya Pradesh, Chhattisgarh, Jharkhand
   bhopal: { state: 'Madhya Pradesh', district: 'Bhopal' },
   indore: { state: 'Madhya Pradesh', district: 'Indore' },
   jabalpur: { state: 'Madhya Pradesh', district: 'Jabalpur' },
@@ -542,6 +673,25 @@ export function formatPubDate(pubDate: Date, referenceDate: Date = new Date()): 
 }
 
 /**
+ * Helper to normalize and strip UI annotations from location strings
+ */
+export function normalizeLocationString(str?: string): string {
+  if (!str) return '';
+  return str
+    .replace(/Δ/g, '')
+    .replace(/\(Hazard Monitored Sector\)/gi, '')
+    .replace(/\(Hazard Monitored\)/gi, '')
+    .replace(/\(State\)/gi, '')
+    .replace(/\(UT\)/gi, '')
+    .replace(/Current Sector/gi, '')
+    .replace(/Sector \[[^\]]*\]/gi, '')
+    .replace(/GPS \([^)]*\)/gi, '')
+    .replace(/Sector/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Extract and strictly verify Indian location from text.
  * Returns null if purely unrelated foreign event.
  */
@@ -551,9 +701,27 @@ export function extractIndiaLocation(
 ): { state?: string; district?: string; area?: string; label: string } | null {
   const combined = `${title} ${desc}`.toLowerCase();
 
-  // 1. Direct State / UT matching
+  // 1. City / District / Regional mapping FIRST (higher geographic precision)
+  for (const [key, mapping] of Object.entries(INDIAN_REGIONAL_MAP)) {
+    // Word boundary or substring check
+    const regex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    if (regex.test(combined)) {
+      const stateName = mapping.state;
+      const distName = mapping.district;
+      const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+      return {
+        state: stateName,
+        district: distName || formattedKey,
+        area: formattedKey,
+        label: distName ? `${formattedKey}, ${distName}, ${stateName}` : `${formattedKey}, ${stateName}`,
+      };
+    }
+  }
+
+  // 2. Direct State / UT matching
   for (const st of INDIAN_STATES_AND_UTS) {
-    if (combined.includes(st.toLowerCase())) {
+    const stRegex = new RegExp(`\\b${st.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    if (stRegex.test(combined)) {
       return {
         state: st,
         label: `${st}, India`,
@@ -561,22 +729,7 @@ export function extractIndiaLocation(
     }
   }
 
-  // 2. City / District / Regional mapping
-  for (const [key, mapping] of Object.entries(INDIAN_REGIONAL_MAP)) {
-    if (combined.includes(key)) {
-      const stateName = mapping.state;
-      const distName = mapping.district;
-      const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
-      return {
-        state: stateName,
-        district: distName,
-        area: formattedKey,
-        label: distName ? `${formattedKey}, ${stateName}` : `${formattedKey} (${stateName}), India`,
-      };
-    }
-  }
-
-  // 3. Check for Indian government / agency involvement or cross-border impact on India
+  // 3. Check for Indian government / agency involvement or regional geographical basins
   const hasIndiaKeyword =
     combined.includes('india') ||
     combined.includes('indian') ||
@@ -589,7 +742,8 @@ export function extractIndiaLocation(
     combined.includes('bay of bengal') ||
     combined.includes('arabian sea') ||
     combined.includes('himalayan region') ||
-    combined.includes('western ghats');
+    combined.includes('western ghats') ||
+    combined.includes('eastern ghats');
 
   // Check if pure foreign without Indian mention
   const isPureForeign = FOREIGN_ENTITIES.some((f) => combined.includes(f));
@@ -603,6 +757,9 @@ export function extractIndiaLocation(
     }
     if (combined.includes('western ghats')) {
       return { state: 'Kerala', label: 'Western Ghats, India' };
+    }
+    if (combined.includes('eastern ghats')) {
+      return { state: 'Andhra Pradesh', label: 'Eastern Ghats, India' };
     }
     if (combined.includes('bay of bengal') || combined.includes('coastal')) {
       return { state: 'Odisha', label: 'East Coast / Bay of Bengal, India' };
@@ -630,6 +787,200 @@ function isDisasterArticle(title: string, desc: string): boolean {
   }
 
   return DISASTER_KEYWORDS.some((kw) => combined.includes(kw));
+}
+
+/**
+ * Calculate distance between two coordinates in km (Haversine formula)
+ */
+function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Strict Geographic Verification for My Location disaster news
+ */
+export function isArticleRelevantToMyLocation(
+  article: VerifiedDisasterNewsItem,
+  targetLoc: {
+    cleanState: string;
+    cleanDistrict: string;
+    cleanArea: string;
+    lat?: number;
+    lng?: number;
+  }
+): { isRelevant: boolean; relevanceScore: number } {
+  const titleLower = article.title.toLowerCase();
+  const summaryLower = article.summary.toLowerCase();
+  const combinedText = `${titleLower} ${summaryLower}`;
+  const articleState = article.location.state?.toLowerCase() || '';
+  const articleDistrict = article.location.district?.toLowerCase() || '';
+  const articleArea = article.location.area?.toLowerCase() || '';
+
+  const { cleanState, cleanDistrict, cleanArea } = targetLoc;
+  const targetStateLower = cleanState.toLowerCase();
+  const targetDistrictLower = cleanDistrict.toLowerCase();
+  const targetAreaLower = cleanArea.toLowerCase();
+
+  // Helper for word match
+  const containsWord = (text: string, term: string) => {
+    if (!term || term.length < 2) return false;
+    const cleanTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${cleanTerm}\\b`, 'i').test(text);
+  };
+
+  // 1. Check for Cross-State Contamination:
+  // If the article specifically mentions or belongs to ANOTHER Indian state,
+  // and has NO mention of target state or target area, reject it immediately!
+  for (const st of INDIAN_STATES_AND_UTS) {
+    const stLower = st.toLowerCase();
+    if (stLower !== targetStateLower && !targetStateLower.includes(stLower) && !stLower.includes(targetStateLower)) {
+      const mentionsOtherState = containsWord(combinedText, stLower) || articleState === stLower;
+      const mentionsTargetState = targetStateLower && (containsWord(combinedText, targetStateLower) || articleState === targetStateLower);
+      const mentionsTargetCityOrDistrict =
+        (targetAreaLower && containsWord(combinedText, targetAreaLower)) ||
+        (targetDistrictLower && containsWord(combinedText, targetDistrictLower));
+
+      if (mentionsOtherState && !mentionsTargetState && !mentionsTargetCityOrDistrict) {
+        return { isRelevant: false, relevanceScore: 0 };
+      }
+    }
+  }
+
+  // 2. City / Area Match (Highest Relevance)
+  if (targetAreaLower) {
+    const areaMatches =
+      containsWord(combinedText, targetAreaLower) ||
+      (articleArea && targetAreaLower.includes(articleArea)) ||
+      (articleDistrict && targetAreaLower.includes(articleDistrict));
+
+    if (areaMatches) {
+      return { isRelevant: true, relevanceScore: 100 };
+    }
+
+    // Check Area-Specific Aliases
+    if (targetAreaLower === 'kolkata' || targetAreaLower === 'calcutta') {
+      if (
+        containsWord(combinedText, 'kolkata') ||
+        containsWord(combinedText, 'calcutta') ||
+        containsWord(combinedText, 'howrah') ||
+        containsWord(combinedText, 'salt lake') ||
+        containsWord(combinedText, 'alipore') ||
+        containsWord(combinedText, 'south 24 parganas') ||
+        containsWord(combinedText, 'north 24 parganas') ||
+        containsWord(combinedText, 'gangetic west bengal') ||
+        containsWord(combinedText, 'south bengal')
+      ) {
+        return { isRelevant: true, relevanceScore: 95 };
+      }
+    } else if (targetAreaLower === 'shillong') {
+      if (
+        containsWord(combinedText, 'shillong') ||
+        containsWord(combinedText, 'east khasi hills') ||
+        containsWord(combinedText, 'khasi hills') ||
+        containsWord(combinedText, 'cherrapunji') ||
+        containsWord(combinedText, 'sohra') ||
+        containsWord(combinedText, 'mawsynram') ||
+        containsWord(combinedText, 'umiam')
+      ) {
+        return { isRelevant: true, relevanceScore: 95 };
+      }
+    } else if (targetAreaLower === 'gangtok') {
+      if (
+        containsWord(combinedText, 'gangtok') ||
+        containsWord(combinedText, 'east sikkim') ||
+        containsWord(combinedText, 'dikchu') ||
+        containsWord(combinedText, 'singtam') ||
+        containsWord(combinedText, 'chungthang') ||
+        containsWord(combinedText, 'teesta')
+      ) {
+        return { isRelevant: true, relevanceScore: 95 };
+      }
+    } else if (targetAreaLower === 'darjeeling') {
+      if (
+        containsWord(combinedText, 'darjeeling') ||
+        containsWord(combinedText, 'kurseong') ||
+        containsWord(combinedText, 'kalimpong') ||
+        containsWord(combinedText, 'mirik') ||
+        containsWord(combinedText, 'siliguri')
+      ) {
+        return { isRelevant: true, relevanceScore: 95 };
+      }
+    }
+  }
+
+  // 3. District Match
+  if (targetDistrictLower && targetDistrictLower !== targetAreaLower) {
+    const districtMatches =
+      containsWord(combinedText, targetDistrictLower) ||
+      (articleDistrict && targetDistrictLower.includes(articleDistrict));
+
+    if (districtMatches) {
+      return { isRelevant: true, relevanceScore: 85 };
+    }
+  }
+
+  // 4. State-Level Verification
+  if (targetStateLower && (containsWord(combinedText, targetStateLower) || articleState === targetStateLower)) {
+    // Special Rule for Major Plain / Coastal Cities (e.g. Kolkata):
+    // If the user selected Kolkata, do not show distant Himalayan hill landslide articles (e.g. Kalimpong/Darjeeling)
+    // unless the article explicitly mentions Kolkata, South Bengal, or a state-wide alert!
+    if (targetAreaLower === 'kolkata' || targetAreaLower === 'calcutta') {
+      const isDistantNorthBengalHills =
+        (containsWord(combinedText, 'darjeeling') ||
+          containsWord(combinedText, 'kalimpong') ||
+          containsWord(combinedText, 'kurseong') ||
+          containsWord(combinedText, 'jalpaiguri') ||
+          containsWord(combinedText, 'alipurduar')) &&
+        !containsWord(combinedText, 'kolkata') &&
+        !containsWord(combinedText, 'south bengal') &&
+        !containsWord(combinedText, 'coastal') &&
+        !containsWord(combinedText, 'red alert across west bengal');
+
+      if (isDistantNorthBengalHills) {
+        return { isRelevant: false, relevanceScore: 0 };
+      }
+
+      // State-wide alerts or South Bengal / Cyclone warnings are relevant
+      const isStateWideOrSouthBengal =
+        containsWord(combinedText, 'cyclone') ||
+        containsWord(combinedText, 'deep depression') ||
+        containsWord(combinedText, 'south bengal') ||
+        containsWord(combinedText, 'gangetic') ||
+        containsWord(combinedText, 'red alert') ||
+        containsWord(combinedText, 'imd alert') ||
+        containsWord(combinedText, 'heavy rain alert');
+
+      if (isStateWideOrSouthBengal) {
+        return { isRelevant: true, relevanceScore: 65 };
+      }
+
+      return { isRelevant: false, relevanceScore: 0 };
+    }
+
+    // For Mountainous / Hill Districts & Smaller States (e.g. Sikkim, Meghalaya, Himachal, Uttarakhand, Kerala):
+    // State-wide heavy rainfall, landslide warnings, cloudbursts directly affect corridors & rivers in the region
+    const isRegionalWeatherAlert =
+      containsWord(combinedText, 'rain') ||
+      containsWord(combinedText, 'landslide') ||
+      containsWord(combinedText, 'flood') ||
+      containsWord(combinedText, 'cloudburst') ||
+      containsWord(combinedText, 'alert') ||
+      containsWord(combinedText, 'warning');
+
+    if (isRegionalWeatherAlert) {
+      return { isRelevant: true, relevanceScore: 70 };
+    }
+  }
+
+  // Not relevant to this location
+  return { isRelevant: false, relevanceScore: 0 };
 }
 
 function cleanHtmlText(text: string): string {
@@ -760,7 +1111,16 @@ function deduplicateArticles(articles: VerifiedDisasterNewsItem[]): VerifiedDisa
 /**
  * Fetch USGS Real-Time Earthquakes for India region (Lat 6°-38°N, Lng 68°-98°E)
  */
-async function fetchUsgsEarthquakesForIndia(timeframe: DisasterNewsTimeframe): Promise<VerifiedDisasterNewsItem[]> {
+async function fetchUsgsEarthquakesForIndia(
+  timeframe: DisasterNewsTimeframe,
+  locParams?: {
+    cleanState: string;
+    cleanDistrict: string;
+    cleanArea: string;
+    lat?: number;
+    lng?: number;
+  }
+): Promise<VerifiedDisasterNewsItem[]> {
   try {
     const days = timeframe === 'today' ? 1.2 : 30;
     const startTime = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -786,6 +1146,7 @@ async function fetchUsgsEarthquakesForIndia(timeframe: DisasterNewsTimeframe): P
       const mag = props.mag || 3.5;
       const place = props.place || 'India Region';
       const eventTime = new Date(props.time);
+      const coords = feature.geometry?.coordinates; // [lng, lat, depth]
 
       if (isNaN(eventTime.getTime())) continue;
 
@@ -795,10 +1156,38 @@ async function fetchUsgsEarthquakesForIndia(timeframe: DisasterNewsTimeframe): P
       const isToday = isPublishedToday(eventTime, now);
       if (timeframe === 'today' && !isToday) continue;
 
+      // In 'my-location' mode, strictly check geographical relevance
+      if (timeframe === 'my-location' && locParams) {
+        let isGeographicallyNear = false;
+
+        if (locParams.lat && locParams.lng && coords && coords.length >= 2) {
+          const eqLat = coords[1];
+          const eqLng = coords[0];
+          const distanceKm = calculateDistanceKm(locParams.lat, locParams.lng, eqLat, eqLng);
+          // Only show earthquakes within 350 km radius of the user's location
+          if (distanceKm <= 350) {
+            isGeographicallyNear = true;
+          }
+        }
+
+        const placeLower = place.toLowerCase();
+        if (
+          (locParams.cleanArea && placeLower.includes(locParams.cleanArea.toLowerCase())) ||
+          (locParams.cleanDistrict && placeLower.includes(locParams.cleanDistrict.toLowerCase())) ||
+          (locParams.cleanState && placeLower.includes(locParams.cleanState.toLowerCase()))
+        ) {
+          isGeographicallyNear = true;
+        }
+
+        if (!isGeographicallyNear) {
+          continue;
+        }
+      }
+
       const { formatted } = formatPubDate(eventTime, now);
 
       const title = `Magnitude ${mag.toFixed(1)} Earthquake Detected near ${place}`;
-      const depth = feature.geometry?.coordinates?.[2] ? `${Math.round(feature.geometry.coordinates[2])} km` : 'shallow focal depth';
+      const depth = coords?.[2] ? `${Math.round(coords[2])} km` : 'shallow focal depth';
       const summary = `A seismic event of magnitude ${mag.toFixed(1)} was recorded at a focal depth of ${depth}. Seismological telemetry stations across the National Centre for Seismology (NCS) and USGS network registered the tremor.`;
 
       items.push({
@@ -873,6 +1262,8 @@ export async function getIndianDisasterNews(options: {
   state?: string;
   district?: string;
   area?: string;
+  lat?: number;
+  lng?: number;
   disasterType?: DisasterCategory;
   searchQuery?: string;
   forceRefresh?: boolean;
@@ -882,13 +1273,19 @@ export async function getIndianDisasterNews(options: {
     state,
     district,
     area,
+    lat,
+    lng,
     disasterType = 'All',
     searchQuery = '',
     forceRefresh = false,
   } = options;
 
+  const cleanState = normalizeLocationString(state);
+  const cleanDistrict = normalizeLocationString(district);
+  const cleanArea = normalizeLocationString(area);
+
   // Cache Key
-  const cacheKey = `disasterNews:${timeframe}:${state || 'all'}:${district || 'all'}:${area || 'all'}:${disasterType}:${searchQuery.trim().toLowerCase()}`;
+  const cacheKey = `disasterNews:${timeframe}:${cleanState || 'all'}:${cleanDistrict || 'all'}:${cleanArea || 'all'}:${lat || 0}:${lng || 0}:${disasterType}:${searchQuery.trim().toLowerCase()}`;
 
   if (!forceRefresh) {
     const cached = NEWS_CACHE.get(cacheKey);
@@ -903,15 +1300,23 @@ export async function getIndianDisasterNews(options: {
   const queries: string[] = [];
 
   if (timeframe === 'my-location') {
-    const locParts: string[] = [];
-    if (area && area !== 'Current Sector' && !area.includes('Sector')) locParts.push(`"${area}"`);
-    if (district && district !== 'District') locParts.push(`"${district}"`);
-    if (state && state !== 'India') locParts.push(`"${state}"`);
+    // Highly targeted queries strictly for the user's specific location
+    if (cleanArea && cleanArea.length > 2 && !cleanArea.toLowerCase().includes('sector')) {
+      queries.push(`(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR waterlogging OR disaster OR alert OR "orange alert" OR "red alert") "${cleanArea}"`);
+      queries.push(`"${cleanArea}" (disaster OR IMD OR SDRF OR NDRF OR rain OR flood OR landslide)`);
+    }
 
-    const locationStr = locParts.length > 0 ? `(${locParts.join(' OR ')})` : 'India';
-    queries.push(`(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR earthquake OR alert OR disaster) ${locationStr} India`);
-    if (state && state !== 'India') {
-      queries.push(`(flood OR landslide OR "heavy rain" OR alert) "${state}" India`);
+    if (cleanDistrict && cleanDistrict.length > 2 && cleanDistrict.toLowerCase() !== cleanArea.toLowerCase()) {
+      queries.push(`(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR alert OR disaster) "${cleanDistrict}"`);
+    }
+
+    if (cleanState && cleanState.length > 2) {
+      queries.push(`(flood OR landslide OR "heavy rain" OR cloudburst OR cyclone OR "red alert" OR "orange alert") "${cleanState}" India`);
+    }
+
+    // Special targeted location combinations
+    if (cleanArea && cleanState && cleanArea.toLowerCase() !== cleanState.toLowerCase()) {
+      queries.push(`"${cleanArea}" "${cleanState}" (disaster OR flood OR landslide OR rain OR alert)`);
     }
   } else {
     // Multi-query parallel fetching across India
@@ -926,11 +1331,11 @@ export async function getIndianDisasterNews(options: {
   // Fetch all RSS feeds + USGS Earthquakes concurrently
   const [rssFeedResults, usgsEarthquakes] = await Promise.all([
     Promise.all(queries.map((q) => fetchSingleGoogleNewsRss(q))),
-    fetchUsgsEarthquakesForIndia(timeframe),
+    fetchUsgsEarthquakesForIndia(timeframe, { cleanState, cleanDistrict, cleanArea, lat, lng }),
   ]);
 
   const rawParsedItems = rssFeedResults.flat();
-  const verifiedArticles: VerifiedDisasterNewsItem[] = [];
+  const verifiedArticles: Array<VerifiedDisasterNewsItem & { _relevanceScore?: number }> = [];
 
   for (let i = 0; i < rawParsedItems.length; i++) {
     const item = rawParsedItems[i];
@@ -952,7 +1357,7 @@ export async function getIndianDisasterNews(options: {
       // Must be published today
       if (!isPublishedToday(pubDate, now)) continue;
     } else if (timeframe === 'all' || timeframe === 'my-location') {
-      // Reasonable freshness window (up to 45 days)
+      // Freshness window (up to 45 days)
       if (diffDays > 45.0 || diffDays < -0.1) continue;
     }
 
@@ -994,7 +1399,7 @@ export async function getIndianDisasterNews(options: {
       item.title.toLowerCase().includes('alert') ||
       item.title.toLowerCase().includes('warning');
 
-    verifiedArticles.push({
+    const articleObj: VerifiedDisasterNewsItem & { _relevanceScore?: number } = {
       id: `gn-${Buffer.from(item.link).toString('base64').slice(0, 22)}-${i}`,
       title: item.title,
       summary,
@@ -1009,7 +1414,25 @@ export async function getIndianDisasterNews(options: {
       isToday,
       isOfficialWarning: isOfficial,
       officialAuthority: isOfficial ? item.source : undefined,
-    });
+    };
+
+    // 4. In 'my-location' timeframe, enforce strict location relevance validation
+    if (timeframe === 'my-location') {
+      const rel = isArticleRelevantToMyLocation(articleObj, {
+        cleanState,
+        cleanDistrict,
+        cleanArea,
+        lat,
+        lng,
+      });
+
+      if (!rel.isRelevant) {
+        continue; // Strictly omit articles from unrelated states or regions
+      }
+      articleObj._relevanceScore = rel.relevanceScore;
+    }
+
+    verifiedArticles.push(articleObj);
   }
 
   // Combine Google News + USGS Earthquakes
@@ -1051,29 +1474,52 @@ export async function getIndianDisasterNews(options: {
     });
   }
 
-  // Sort strictly Newest -> Oldest (with priority to LIVE alerts)
-  filtered.sort((a, b) => {
-    const timeA = new Date(a.publishedAt).getTime();
-    const timeB = new Date(b.publishedAt).getTime();
+  // Sorting
+  if (timeframe === 'my-location') {
+    // Sort by: Relevance Score (Area > District > State) -> LIVE Alerts -> Newest First
+    filtered.sort((a, b) => {
+      const scoreA = (a as any)._relevanceScore || 50;
+      const scoreB = (b as any)._relevanceScore || 50;
+      if (scoreA !== scoreB) return scoreB - scoreA;
 
-    const priorityA = (a.statusBadge === 'LIVE' ? 1000000000 : 0) + timeA;
-    const priorityB = (b.statusBadge === 'LIVE' ? 1000000000 : 0) + timeB;
+      const timeA = new Date(a.publishedAt).getTime();
+      const timeB = new Date(b.publishedAt).getTime();
+      const priorityA = (a.statusBadge === 'LIVE' ? 1000000000 : 0) + timeA;
+      const priorityB = (b.statusBadge === 'LIVE' ? 1000000000 : 0) + timeB;
 
-    return priorityB - priorityA;
+      return priorityB - priorityA;
+    });
+  } else {
+    // Sort strictly Newest -> Oldest (with priority to LIVE alerts)
+    filtered.sort((a, b) => {
+      const timeA = new Date(a.publishedAt).getTime();
+      const timeB = new Date(b.publishedAt).getTime();
+
+      const priorityA = (a.statusBadge === 'LIVE' ? 1000000000 : 0) + timeA;
+      const priorityB = (b.statusBadge === 'LIVE' ? 1000000000 : 0) + timeB;
+
+      return priorityB - priorityA;
+    });
+  }
+
+  // Clean temporary _relevanceScore property
+  const cleanedArticles = filtered.map((item) => {
+    const { _relevanceScore, ...rest } = item as any;
+    return rest as VerifiedDisasterNewsItem;
   });
 
   const responsePayload: DisasterNewsResponse = {
     timeframe,
-    totalResults: filtered.length,
+    totalResults: cleanedArticles.length,
     lastUpdated: new Date().toISOString(),
     locationScope: {
-      state,
-      district,
-      area,
+      state: cleanState || state,
+      district: cleanDistrict || district,
+      area: cleanArea || area,
       isFallback: false,
       fallbackLevel: null,
     },
-    articles: filtered,
+    articles: cleanedArticles,
   };
 
   // Cache response

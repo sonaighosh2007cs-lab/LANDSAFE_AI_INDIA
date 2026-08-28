@@ -40,6 +40,12 @@ app.get("/api/health", (req, res) => {
     app: "LandSafe AI",
     version: "2.5.0",
     geminiEnabled: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY"),
+    weatherApiKeyAvailable: Boolean(
+      (process.env.WEATHERAPI_KEY && process.env.WEATHERAPI_KEY !== "MY_WEATHER_API_KEY") ||
+      (process.env.WEATHER_API_KEY && process.env.WEATHER_API_KEY !== "MY_WEATHER_API_KEY") ||
+      true // fallback key included
+    ),
+    weatherApiProvider: "WeatherAPI.com & IMD High-Resolution Mesh",
     googleWeatherKeyAvailable: Boolean(process.env.GOOGLE_API_KEY || process.env.GOOGLE_MAPS_API_KEY),
   });
 });
@@ -93,6 +99,8 @@ app.get("/api/news/disaster", async (req, res) => {
     const state = req.query.state ? (req.query.state as string) : undefined;
     const district = req.query.district ? (req.query.district as string) : undefined;
     const area = req.query.area ? (req.query.area as string) : undefined;
+    const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
+    const lng = req.query.lng ? parseFloat(req.query.lng as string) : undefined;
     const disasterType = (req.query.disasterType as DisasterCategory) || "All";
     const searchQuery = (req.query.search as string) || "";
     const forceRefresh = req.query.refresh === "true";
@@ -102,6 +110,8 @@ app.get("/api/news/disaster", async (req, res) => {
       state,
       district,
       area,
+      lat: lat !== undefined && !isNaN(lat) ? lat : undefined,
+      lng: lng !== undefined && !isNaN(lng) ? lng : undefined,
       disasterType,
       searchQuery,
       forceRefresh,

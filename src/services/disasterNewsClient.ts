@@ -36,9 +36,11 @@ export async function fetchDisasterNews(
   const state = location?.state;
   const district = location?.district;
   const area = location?.area;
+  const lat = location?.coordinates?.[0];
+  const lng = location?.coordinates?.[1];
 
   // Build cache key
-  const cacheKey = `${timeframe}:${state || 'all'}:${district || 'all'}:${area || 'all'}:${disasterType}:${searchQuery.trim().toLowerCase()}`;
+  const cacheKey = `${timeframe}:${state || 'all'}:${district || 'all'}:${area || 'all'}:${lat || 0}:${lng || 0}:${disasterType}:${searchQuery.trim().toLowerCase()}`;
 
   if (!forceRefresh) {
     const cached = CLIENT_CACHE.get(cacheKey);
@@ -52,6 +54,8 @@ export async function fetchDisasterNews(
   if (state && state !== 'India') queryParams.set('state', state);
   if (district && district !== 'District') queryParams.set('district', district);
   if (area && area !== 'Current Sector' && !area.includes('Sector')) queryParams.set('area', area);
+  if (lat !== undefined && !isNaN(lat)) queryParams.set('lat', lat.toString());
+  if (lng !== undefined && !isNaN(lng)) queryParams.set('lng', lng.toString());
   if (disasterType && disasterType !== 'All') queryParams.set('disasterType', disasterType);
   if (searchQuery.trim()) queryParams.set('search', searchQuery.trim());
   if (forceRefresh) queryParams.set('refresh', 'true');
